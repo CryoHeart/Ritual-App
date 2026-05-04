@@ -24,7 +24,10 @@ public class SetlistsLogic : ISetlistsLogic
     {
         await EnsureBandExistsAsync(bandId);
         var setlists = await _setlistsDao.GetByBandIdAsync(bandId);
-        return await Task.WhenAll(setlists.Select(MapSetlistAsync));
+        var results = new List<SetlistResponse>();
+        foreach (var setlist in setlists)
+            results.Add(await MapSetlistAsync(setlist));
+        return results;
     }
 
     public async Task<SetlistResponse> GetSetlistAsync(string bandId, string setlistId)
@@ -101,24 +104,24 @@ public class SetlistsLogic : ISetlistsLogic
 
     private async Task<SetlistResponse> MapSetlistAsync(SetlistEntity setlist)
     {
-        var songTasks = setlist.SongIds.Select(async (songId, index) =>
+        var songs = new List<SetlistSongResponse>();
+        var index = 0;
+        foreach (var songId in setlist.SongIds)
         {
             var song = await _songsDao.GetByIdAsync(songId);
-            if (song is null) return null;
-            return new SetlistSongResponse
+            if (song is not null)
             {
-                SongId = song.Id,
-                Title = song.Title,
-                Bpm = song.Bpm,
-                DurationSeconds = song.DurationSeconds,
-                Order = index + 1
-            };
-        });
-
-        var songs = (await Task.WhenAll(songTasks))
-            .Where(s => s is not null)
-            .Select(s => s!)
-            .ToList();
+                songs.Add(new SetlistSongResponse
+                {
+                    SongId = song.Id,
+                    Title = song.Title,
+                    Bpm = song.Bpm,
+                    DurationSeconds = song.DurationSeconds,
+                    Order = index + 1
+                });
+            }
+            index++;
+        }
 
         return new SetlistResponse
         {
