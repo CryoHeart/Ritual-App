@@ -1,0 +1,13 @@
+{
+  "name": "ritual",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:client": "npm --prefix client start",
+    "start:server": "dotnet run --project ./server --urls http://localhost:5000"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
