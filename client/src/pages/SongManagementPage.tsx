@@ -179,50 +179,43 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-zinc-800/60 bg-zinc-900/60 px-6 py-4 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
+      <header className="border-b border-zinc-800/60 bg-zinc-900/60 px-6 py-5 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-5xl items-center">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-100"
+            className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-100"
           >
             ← Back
           </button>
-          <div className="h-4 w-px bg-zinc-700" />
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.36em] text-red-500">
+          <div className="ml-5 h-5 w-px bg-zinc-700" />
+          <div className="ml-9">
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-red-500">
               {bandName ?? 'Band'}
             </p>
-            <h1 className="text-lg font-semibold tracking-tight text-zinc-100">Song Management</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Song Management</h1>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <RitualButton variant="neutral" size="sm" onClick={handleOpenNewAlbum}>
-            + New Album
-          </RitualButton>
-          <RitualButton variant="primary" size="sm" onClick={handleOpenNewSong}>
-            + New Song
-          </RitualButton>
         </div>
       </header>
 
       {/* Stats strip */}
-      <div className="flex items-center gap-6 border-b border-zinc-800/40 bg-zinc-900/30 px-6 py-2">
-        <span className="text-xs text-zinc-500">
-          <span className="font-semibold text-zinc-300">{realAlbums.length}</span> albums
-        </span>
-        <span className="text-xs text-zinc-500">
-          <span className="font-semibold text-zinc-300">{totalSongs}</span> songs
-        </span>
+      <div className="border-b border-zinc-800/40 bg-zinc-900/30 px-6 py-3">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-8">
+          <span className="text-sm text-zinc-500">
+            <span className="font-semibold text-zinc-300">{realAlbums.length}</span> albums
+          </span>
+          <span className="text-sm text-zinc-500">
+            <span className="font-semibold text-zinc-300">{totalSongs}</span> songs
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <RitualCard className="w-full max-w-sm text-center">
-              <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Loading</p>
-              <p className="mt-3 text-lg font-semibold text-zinc-200">Loading songs...</p>
+            <RitualCard className="w-full max-w-md text-center">
+              <p className="text-sm uppercase tracking-[0.32em] text-zinc-500">Loading</p>
+              <p className="mt-3 text-xl font-semibold text-zinc-200">Loading songs...</p>
               <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
                 <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
               </div>
@@ -230,42 +223,47 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
           </div>
         ) : loadError ? (
           <div className="flex items-center justify-center py-24">
-            <RitualCard className="w-full max-w-sm border-red-900/60 text-center">
-              <p className="text-sm text-red-300">{loadError}</p>
+            <RitualCard className="w-full max-w-md border-red-900/60 text-center">
+              <p className="text-base text-red-300">{loadError}</p>
               <RitualButton variant="danger" size="sm" className="mt-4" onClick={load}>
                 Retry
               </RitualButton>
             </RitualCard>
           </div>
         ) : (
-          <div className="mx-auto max-w-4xl space-y-4">
+          <div className="mx-auto max-w-5xl space-y-5">
             {/* Search */}
             <div className="relative">
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search songs..."
-                className="w-full rounded-xl border border-zinc-700/60 bg-zinc-900/60 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-red-600/60"
+                className="w-full rounded-2xl border border-zinc-700/60 bg-zinc-900/60 px-5 py-3.5 text-base text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-red-600/60"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-300"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500 hover:text-zinc-300"
                 >
                   ✕
                 </button>
               )}
             </div>
 
+            <div className="grid w-full grid-cols-2 gap-3">
+              <RitualButton variant="neutral" size="md" className="w-full" onClick={handleOpenNewAlbum}>
+                + New Album
+              </RitualButton>
+              <RitualButton variant="primary" size="md" className="w-full" onClick={handleOpenNewSong}>
+                + New Song
+              </RitualButton>
+            </div>
+
             {albums.length === 0 ? (
-              <RitualCard className="text-center py-12">
-                <p className="text-xs uppercase tracking-[0.28em] text-zinc-600">Empty</p>
-                <p className="mt-2 text-sm text-zinc-500">No albums or songs yet.</p>
-                <p className="mt-1 text-xs text-zinc-600">Create an album or add songs to get started.</p>
-                <div className="mt-5 flex justify-center gap-2">
-                  <RitualButton variant="neutral" size="sm" onClick={handleOpenNewAlbum}>+ New Album</RitualButton>
-                  <RitualButton variant="primary" size="sm" onClick={handleOpenNewSong}>+ New Song</RitualButton>
-                </div>
+              <RitualCard className="text-center py-14">
+                <p className="text-sm uppercase tracking-[0.28em] text-zinc-600">Empty</p>
+                <p className="mt-2 text-base text-zinc-500">No albums or songs yet.</p>
+                <p className="mt-1 text-sm text-zinc-600">Create an album or add songs to get started.</p>
               </RitualCard>
             ) : (
               <>
@@ -289,8 +287,8 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
                   return a.songs.filter(s => s.title.toLowerCase().includes(q)).length === 0;
                 }) && (
                   <RitualCard className="text-center py-10">
-                    <p className="text-xs uppercase tracking-[0.28em] text-zinc-600">No Results</p>
-                    <p className="mt-2 text-sm text-zinc-500">No songs match "{searchQuery}"</p>
+                    <p className="text-sm uppercase tracking-[0.28em] text-zinc-600">No Results</p>
+                    <p className="mt-2 text-base text-zinc-500">No songs match "{searchQuery}"</p>
                   </RitualCard>
                 )}
               </>

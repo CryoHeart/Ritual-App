@@ -20,23 +20,26 @@ interface Props {
 
 export function SetlistEditorHeader({ setlist, bandName, onBack }: Props) {
   return (
-    <div className="flex flex-col gap-3 border-b border-zinc-800 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-4">
-        <RitualButton variant="ghost" onClick={onBack} className="shrink-0">
-          ← Back
-        </RitualButton>
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.26em] text-zinc-500">Setlist Editor</p>
-          <h2 className="mt-0.5 truncate text-xl font-bold text-zinc-100">{setlist.name}</h2>
-          {setlist.description && (
-            <p className="mt-0.5 truncate text-sm text-zinc-400">{setlist.description}</p>
-          )}
+    <div className="border-b border-zinc-800 px-6 py-5">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <RitualButton variant="ghost" onClick={onBack} className="shrink-0">
+            ← Back
+          </RitualButton>
+          <div className="h-5 w-px bg-zinc-700" />
+          <div className="min-w-0 sm:ml-7">
+            <p className="text-sm uppercase tracking-[0.26em] text-zinc-500">Setlist Editor</p>
+            <h2 className="mt-0.5 truncate text-2xl font-bold text-zinc-100">{setlist.name}</h2>
+            {setlist.description && (
+              <p className="mt-0.5 truncate text-base text-zinc-400">{setlist.description}</p>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {bandName && <RitualBadge tone="accent">{bandName}</RitualBadge>}
-        <RitualBadge>{setlist.totalSongs} Songs</RitualBadge>
-        <RitualBadge>{fmtDuration(setlist.totalDurationSeconds)}</RitualBadge>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {bandName && <RitualBadge tone="accent">{bandName}</RitualBadge>}
+          <RitualBadge>{setlist.totalSongs} Songs</RitualBadge>
+          <RitualBadge>{fmtDuration(setlist.totalDurationSeconds)}</RitualBadge>
+        </div>
       </div>
     </div>
   );

@@ -148,9 +148,9 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <RitualCard className="w-full max-w-md text-center">
-          <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Loading Editor</p>
-          <p className="mt-3 text-lg font-semibold text-zinc-200">Preparing setlist data...</p>
+        <RitualCard className="w-full max-w-lg text-center">
+          <p className="text-sm uppercase tracking-[0.32em] text-zinc-500">Loading Editor</p>
+          <p className="mt-3 text-xl font-semibold text-zinc-200">Preparing setlist data...</p>
           <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
             <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
           </div>
@@ -162,9 +162,9 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
   if (!setlist) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <RitualCard className="w-full max-w-md border-red-900/60 text-center">
-          <p className="text-sm text-red-300">{error ?? 'Setlist not found.'}</p>
-          <button onClick={onBack} className="mt-4 text-xs text-zinc-400 underline hover:text-zinc-100">
+        <RitualCard className="w-full max-w-lg border-red-900/60 text-center">
+          <p className="text-base text-red-300">{error ?? 'Setlist not found.'}</p>
+          <button onClick={onBack} className="mt-4 text-sm text-zinc-400 underline hover:text-zinc-100">
             Go back
           </button>
         </RitualCard>
@@ -177,27 +177,28 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
       <SetlistEditorHeader setlist={setlist} bandName={bandName} onBack={onBack} />
 
       {error && (
-        <div className="border-b border-red-900/50 bg-red-950/30 px-6 py-3 text-sm text-red-300">
-          {error}
+        <div className="border-b border-red-900/50 bg-red-950/30 px-6 py-3">
+          <div className="mx-auto w-full max-w-6xl px-2 text-base text-red-300">{error}</div>
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-hidden px-8 py-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800/70 xl:flex-row">
         {/* Left: current setlist */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-r border-zinc-800/60">
-          <div className="border-b border-zinc-800/60 bg-zinc-900/40 px-5 py-3">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-r border-zinc-800/60 bg-zinc-950/40">
+          <div className="border-b border-zinc-800/60 bg-zinc-900/40 px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-400">
                   Ritual Sequence
                 </p>
-                <p className="mt-0.5 text-xs text-zinc-600">{localSongs.length} songs in order</p>
+                <p className="mt-0.5 text-sm text-zinc-500">{localSongs.length} songs in order</p>
               </div>
               {isDirty && (
                 <button
                   onClick={handleSaveOrder}
                   disabled={songOp}
-                  className="rounded-lg bg-red-700 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow hover:bg-red-600 disabled:opacity-50"
+                  className="rounded-lg bg-red-700 px-5 py-2 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow hover:bg-red-600 disabled:opacity-50"
                 >
                   Save Order
                 </button>
@@ -216,12 +217,12 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
         </div>
 
         {/* Right: song library */}
-        <div className="flex min-h-0 w-full flex-col overflow-hidden xl:w-[400px] xl:shrink-0">
-          <div className="border-b border-zinc-800/60 bg-zinc-900/40 px-5 py-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+        <div className="flex min-h-0 w-full flex-col overflow-hidden bg-zinc-950/30 xl:w-[460px] xl:shrink-0">
+          <div className="border-b border-zinc-800/60 bg-zinc-900/40 px-6 py-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-400">
               Song Library
             </p>
-            <p className="mt-0.5 text-xs text-zinc-600">Grouped by album</p>
+            <p className="mt-0.5 text-sm text-zinc-500">Grouped by album</p>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <AlbumSongLibrary
@@ -232,6 +233,7 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
             />
           </div>
         </div>
+      </div>
       </div>
 
     </div>
