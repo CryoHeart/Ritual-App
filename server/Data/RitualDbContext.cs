@@ -12,6 +12,7 @@ public class RitualDbContext : DbContext
     public DbSet<UserEntity> Users => Set<UserEntity>();
     public DbSet<BandEntity> Bands => Set<BandEntity>();
     public DbSet<BandMemberEntity> BandMembers => Set<BandMemberEntity>();
+    public DbSet<AlbumEntity> Albums => Set<AlbumEntity>();
     public DbSet<SongEntity> Songs => Set<SongEntity>();
     public DbSet<SetlistEntity> Setlists => Set<SetlistEntity>();
     public DbSet<SetlistSongEntity> SetlistSongs => Set<SetlistSongEntity>();
@@ -70,6 +71,21 @@ public class RitualDbContext : DbContext
             entity.Property(e => e.Tuning).HasColumnName("tuning");
             entity.Property(e => e.SongKey).HasColumnName("song_key");
             entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.AlbumId).HasColumnName("album_id");
+            entity.Property(e => e.AlbumTrackNumber).HasColumnName("album_track_number");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<AlbumEntity>(entity =>
+        {
+            entity.ToTable("albums");
+            entity.HasKey(e => e.AlbumId);
+            entity.Property(e => e.AlbumId).HasColumnName("album_id");
+            entity.Property(e => e.BandId).HasColumnName("band_id");
+            entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.ReleaseYear).HasColumnName("release_year");
+            entity.Property(e => e.SortOrder).HasColumnName("sort_order");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });

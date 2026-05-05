@@ -2,7 +2,7 @@ namespace server.Models.Responses;
 
 public class SetlistResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public string SetlistId { get; set; } = string.Empty;
 
     public string BandId { get; set; } = string.Empty;
 
@@ -10,5 +10,11 @@ public class SetlistResponse
 
     public string? Description { get; set; }
 
-    public List<SetlistSongResponse> Songs { get; set; } = new();
+    public int TotalSongs { get; set; }
+
+    public int TotalDurationSeconds { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 }

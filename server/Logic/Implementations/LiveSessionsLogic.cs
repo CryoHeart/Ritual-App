@@ -31,7 +31,7 @@ public class LiveSessionsLogic : ILiveSessionsLogic
         await EnsureBandExistsAsync(bandId);
 
         var setlist = await GetSetlistAndEnsureBandAsync(setlistId, bandId);
-        if (setlist.SongIds.Count == 0)
+        if (setlist.TotalSongs == 0)
         {
             throw new ConflictException("Cannot start live session for an empty setlist.");
         }
@@ -58,7 +58,7 @@ public class LiveSessionsLogic : ILiveSessionsLogic
         }
 
         var setlist = await GetSetlistAndEnsureBandAsync(session.SetlistId, bandId);
-        var totalSongs = setlist.SongIds.Count;
+        var totalSongs = setlist.TotalSongs;
         if (totalSongs == 0)
         {
             throw new ConflictException("Cannot advance session with an empty setlist.");
@@ -137,7 +137,7 @@ public class LiveSessionsLogic : ILiveSessionsLogic
 
     private async Task<SetlistEntity> GetSetlistAndEnsureBandAsync(string setlistId, string bandId)
     {
-        var setlist = await _setlistsDao.GetByIdAsync(setlistId);
+        var setlist = await _setlistsDao.GetByIdWithSongsAsync(setlistId);
         if (setlist is null)
         {
             throw new NotFoundException("Setlist was not found.");
@@ -156,9 +156,9 @@ public class LiveSessionsLogic : ILiveSessionsLogic
         string? currentSongId = null;
         string? currentSongTitle = null;
 
-        if (setlist.SongIds.Count > 0 && session.CurrentSongIndex >= 0 && session.CurrentSongIndex < setlist.SongIds.Count)
+        if (setlist.TotalSongs > 0 && session.CurrentSongIndex >= 0 && session.CurrentSongIndex < setlist.TotalSongs)
         {
-            var songId = setlist.SongIds[session.CurrentSongIndex];
+            var songId = setlist.Songs[session.CurrentSongIndex].SongId;
             currentSongId = songId;
             var song = await _songsDao.GetByIdAsync(songId);
             currentSongTitle = song?.Title;
@@ -172,7 +172,7 @@ public class LiveSessionsLogic : ILiveSessionsLogic
             Status = session.Status,
             IsEnded = session.IsEnded,
             CurrentSongIndex = session.CurrentSongIndex,
-            TotalSongs = setlist.SongIds.Count,
+            TotalSongs = setlist.TotalSongs,
             CurrentSongId = currentSongId,
             CurrentSongTitle = currentSongTitle
         };

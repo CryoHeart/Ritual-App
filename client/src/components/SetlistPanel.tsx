@@ -1,4 +1,6 @@
-import type { Setlist } from '../types/setlist';
+import type { Setlist, SetlistDetails } from '../types/setlist';
+import { RitualBadge } from './ui/RitualBadge';
+import { RitualButton } from './ui/RitualButton';
 
 function fmt(seconds?: number): string {
   if (!seconds) return '—';
@@ -7,8 +9,8 @@ function fmt(seconds?: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function totalDuration(setlist: Setlist): string {
-  const total = setlist.songs.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0);
+function totalDuration(setlist: SetlistDetails): string {
+  const total = setlist.totalDurationSeconds;
   if (total === 0) return '—';
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
@@ -20,32 +22,34 @@ function totalDuration(setlist: Setlist): string {
 
 interface Props {
   setlists: Setlist[];
-  selectedSetlist: Setlist | null;
-  onSelectSetlist: (setlist: Setlist) => void;
+  selectedSetlistId: string | null;
+  selectedSetlist: SetlistDetails | null;
+  isLoading: boolean;
+  onSelectSetlistId: (setlistId: string) => void;
   onBeginRitual: () => void;
 }
 
-export function SetlistPanel({ setlists, selectedSetlist, onSelectSetlist, onBeginRitual }: Props) {
+export function SetlistPanel({ setlists, selectedSetlistId, selectedSetlist, isLoading, onSelectSetlistId, onBeginRitual }: Props) {
   if (setlists.length === 0) {
     return (
-      <div className="py-10 text-center text-sm text-zinc-600">
+      <div className="py-14 text-center text-sm text-zinc-500">
         No setlists found.
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-5">
       {/* Setlist tabs */}
       <div className="flex flex-wrap gap-2">
         {setlists.map(sl => (
           <button
-            key={sl.id}
-            onClick={() => onSelectSetlist(sl)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              selectedSetlist?.id === sl.id
-                ? 'bg-red-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+            key={sl.setlistId}
+            onClick={() => onSelectSetlistId(sl.setlistId)}
+            className={`rounded-lg border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-all ${
+              selectedSetlistId === sl.setlistId
+                ? 'border-red-700 bg-red-950/60 text-red-200 shadow-[0_0_16px_rgba(127,29,29,0.4)]'
+                : 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
             }`}
           >
             {sl.name}
@@ -53,35 +57,41 @@ export function SetlistPanel({ setlists, selectedSetlist, onSelectSetlist, onBeg
         ))}
       </div>
 
+      {isLoading && (
+        <div className="py-12 text-center text-sm text-zinc-500">
+          Loading setlist details...
+        </div>
+      )}
+
       {selectedSetlist && (
         <>
           {/* Song order */}
-          <div className="rounded-lg border border-zinc-800 overflow-hidden">
-            {selectedSetlist.songs.length === 0 ? (
-              <div className="py-8 text-center text-sm text-zinc-600">
+          <div className="overflow-hidden rounded-xl border border-zinc-800/90 bg-zinc-950/70">
+            {selectedSetlist.totalSongs === 0 ? (
+              <div className="py-10 text-center text-sm text-zinc-500">
                 This setlist is empty.
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800/40 max-h-72 overflow-y-auto">
+              <div className="max-h-72 divide-y divide-zinc-800/80 overflow-y-auto">
                 {selectedSetlist.songs.map(song => (
                   <div
                     key={song.songId}
-                    className="flex items-center gap-3 bg-zinc-900/80 px-4 py-3 hover:bg-zinc-800/40 transition-colors"
+                    className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-zinc-800/35"
                   >
-                    <span className="w-5 shrink-0 text-right font-mono text-xs text-red-600/70">
-                      {song.order}
+                    <span className="inline-flex w-8 shrink-0 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 py-1 text-xs font-mono text-red-300">
+                      {song.positionIndex + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{song.title}</p>
-                      {song.transitionNotes && (
-                        <p className="mt-0.5 truncate text-xs text-zinc-500">
-                          {song.transitionNotes}
+                      <p className="truncate text-sm font-semibold text-zinc-100">{song.title}</p>
+                      {(song.transitionNotes || song.performanceNotes) && (
+                        <p className="mt-1 truncate text-xs text-zinc-500">
+                          {song.transitionNotes || song.performanceNotes}
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-3 text-xs text-zinc-500">
-                      {song.bpm != null && <span>{song.bpm}</span>}
-                      <span className="w-10 text-right tabular-nums">{fmt(song.durationSeconds)}</span>
+                    <div className="flex shrink-0 items-center gap-2 text-xs text-zinc-500">
+                      {song.bpm != null && <RitualBadge>{song.bpm} BPM</RitualBadge>}
+                      <span className="w-11 text-right font-mono tabular-nums text-zinc-300">{fmt(song.durationSeconds)}</span>
                     </div>
                   </div>
                 ))}
@@ -90,19 +100,21 @@ export function SetlistPanel({ setlists, selectedSetlist, onSelectSetlist, onBeg
           </div>
 
           {/* Summary row */}
-          <div className="flex items-center justify-between px-1 text-xs text-zinc-500">
-            <span>{selectedSetlist.songs.length} songs</span>
-            <span className="tabular-nums">{totalDuration(selectedSetlist)}</span>
+          <div className="flex items-center justify-between px-1 text-xs uppercase tracking-[0.18em] text-zinc-500">
+            <span>{selectedSetlist.totalSongs} Songs</span>
+            <span className="font-mono tabular-nums">{totalDuration(selectedSetlist)}</span>
           </div>
 
           {/* Begin Ritual */}
-          <button
+          <RitualButton
             onClick={onBeginRitual}
-            disabled={selectedSetlist.songs.length === 0}
-            className="w-full rounded-lg border border-red-700 bg-red-600 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-lg shadow-red-950/40 transition-all hover:bg-red-700 hover:shadow-red-900/50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={selectedSetlist.totalSongs === 0}
+            variant="primary"
+            size="lg"
+            className="ritual-pulse w-full"
           >
             Begin Ritual
-          </button>
+          </RitualButton>
         </>
       )}
     </div>

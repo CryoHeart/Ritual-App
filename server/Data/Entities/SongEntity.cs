@@ -18,6 +18,10 @@ public class SongEntity
 
     public string? Notes { get; set; }
 
+    public string? AlbumId { get; set; }
+
+    public int? AlbumTrackNumber { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

@@ -1,0 +1,12 @@
+-- ============================================================
+-- RITUAL Migration 002: Song Editing API Readiness
+-- Run against: ritual_db
+-- ============================================================
+-- This feature uses existing schema introduced by 001_add_albums.sql:
+--   - songs.album_id
+--   - songs.album_track_number
+--   - songs.updated_at
+--   - albums table + FK
+--
+-- No additional schema changes are required for song edit CRUD.
+SELECT 'Schema already supports song editing. No-op migration.' AS info;

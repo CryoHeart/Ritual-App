@@ -1,201 +1,383 @@
 import { useEffect, useState } from 'react';
 import { getBands } from '../api/bandsApi';
 import { getSongs } from '../api/songsApi';
-import { getSetlists } from '../api/setlistsApi';
+import {
+  createSetlist,
+  deleteSetlist,
+  getSetlistDetails,
+  getSetlists,
+  updateSetlist
+} from '../api/setlistsApi';
 import { AppShell } from '../components/AppShell';
-import { StatCard } from '../components/StatCard';
+import { SetlistsPanel } from '../components/Setlists/SetlistsPanel';
 import { SongList } from '../components/SongList';
-import { SetlistPanel } from '../components/SetlistPanel';
-import { CeremonyPreview } from '../components/CeremonyPreview';
+import { StatCard } from '../components/StatCard';
+import { RitualButton } from '../components/ui/RitualButton';
+import { RitualCard } from '../components/ui/RitualCard';
+import { SectionTitle } from '../components/ui/SectionTitle';
 import type { Band } from '../types/band';
+import type {
+  CreateSetlistRequest,
+  SetlistDetails,
+  SetlistSummary,
+  UpdateSetlistRequest
+} from '../types/setlist';
 import type { Song } from '../types/song';
-import type { Setlist } from '../types/setlist';
-
-function fmtDuration(setlist: Setlist | null): string {
-  if (!setlist || setlist.songs.length === 0) return '—';
-  const total = setlist.songs.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0);
-  if (total === 0) return '—';
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-}
+import { CeremonyModePage } from './CeremonyModePage';
+import { SetlistEditorPage } from './SetlistEditorPage';
+import { SongManagementPage } from './SongManagementPage';
 
 export function DashboardPage() {
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBand, setSelectedBand] = useState<Band | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
-  const [setlists, setSetlists] = useState<Setlist[]>([]);
-  const [selectedSetlist, setSelectedSetlist] = useState<Setlist | null>(null);
+  const [setlists, setSetlists] = useState<SetlistSummary[]>([]);
+  const [selectedSetlistId, setSelectedSetlistId] = useState<string | null>(null);
+
+  const [selectedSetlistIdForEdit, setSelectedSetlistIdForEdit] = useState<string | null>(null);
+  const [ceremonySetlist, setCeremonySetlist] = useState<SetlistDetails | null>(null);
+  const [songManagementOpen, setSongManagementOpen] = useState(false);
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [bandLoading, setBandLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [setlistsLoading, setSetlistsLoading] = useState(false);
+  const [fatalError, setFatalError] = useState<string | null>(null);
+  const [setlistsPanelMessage, setSetlistsPanelMessage] = useState<string | null>(null);
 
-  // Load bands on mount
   useEffect(() => {
     getBands()
       .then(data => {
         setBands(data);
         if (data.length > 0) setSelectedBand(data[0]);
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load bands.'))
+      .catch(e => setFatalError(e instanceof Error ? e.message : 'Failed to load bands.'))
       .finally(() => setInitialLoading(false));
   }, []);
 
-  // Load songs + setlists when band changes
   useEffect(() => {
     if (!selectedBand) return;
 
     setBandLoading(true);
+    setFatalError(null);
+    setSetlistsPanelMessage(null);
+    setCeremonySetlist(null);
+    setSelectedSetlistIdForEdit(null);
+    setSongManagementOpen(false);
+    setSelectedSetlistId(null);
     setSongs([]);
     setSetlists([]);
-    setSelectedSetlist(null);
 
     Promise.all([getSongs(selectedBand.id), getSetlists(selectedBand.id)])
       .then(([songsData, setlistsData]) => {
         setSongs(songsData);
         setSetlists(setlistsData);
-        if (setlistsData.length > 0) setSelectedSetlist(setlistsData[0]);
+        setSelectedSetlistId(setlistsData[0]?.setlistId ?? null);
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load band data.'))
+      .catch(e => setFatalError(e instanceof Error ? e.message : 'Failed to load band data.'))
       .finally(() => setBandLoading(false));
   }, [selectedBand]);
 
-  const handleBeginRitual = () => {
-    // TODO: Start a live session via POST /api/bands/{bandId}/setlists/{setlistId}/live-sessions/start
-    // and navigate to the live session view once routing is added.
-    alert('Live session coming soon!');
+  const refreshSetlists = async (bandId: string, preferredSelection?: string | null) => {
+    const updated = await getSetlists(bandId);
+    setSetlists(updated);
+
+    const selectionCandidate = preferredSelection ?? selectedSetlistId;
+    if (selectionCandidate && updated.some(s => s.setlistId === selectionCandidate)) {
+      setSelectedSetlistId(selectionCandidate);
+    } else {
+      setSelectedSetlistId(updated[0]?.setlistId ?? null);
+    }
+
+    return updated;
   };
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  const handleBeginRitual = async (setlistId: string) => {
+    if (!selectedBand) return;
+
+    setSelectedSetlistId(setlistId);
+    setSetlistsPanelMessage(null);
+
+    const summary = setlists.find(s => s.setlistId === setlistId);
+    if (summary && summary.totalSongs === 0) {
+      setSetlistsPanelMessage('This ritual has no songs yet. Add songs in the editor first.');
+      return;
+    }
+
+    setSetlistsLoading(true);
+    try {
+      const details = await getSetlistDetails(selectedBand.id, setlistId);
+      setCeremonySetlist(details);
+    } catch (e) {
+      setSetlistsPanelMessage(e instanceof Error ? e.message : 'Failed to load setlist for ceremony.');
+    } finally {
+      setSetlistsLoading(false);
+    }
+  };
+
+  const handleEndRitual = () => {
+    setCeremonySetlist(null);
+  };
+
+  const handleEditSetlistSongs = (setlistId: string) => {
+    setSelectedSetlistId(setlistId);
+    setSelectedSetlistIdForEdit(setlistId);
+  };
+
+  const handleBackFromEditor = () => {
+    const editedSetlistId = selectedSetlistIdForEdit;
+    setSelectedSetlistIdForEdit(null);
+
+    if (selectedBand) {
+      refreshSetlists(selectedBand.id, editedSetlistId)
+        .catch(() => {});
+    }
+  };
+
+  const handleBackFromSongManagement = () => {
+    setSongManagementOpen(false);
+    // Refresh song count
+    if (selectedBand) {
+      Promise.all([getSongs(selectedBand.id), getSetlists(selectedBand.id)])
+        .then(([songsData, setlistsData]) => {
+          setSongs(songsData);
+          setSetlists(setlistsData);
+        })
+        .catch(() => {});
+    }
+  };
+
+  const handleCreateSetlist = async (payload: CreateSetlistRequest) => {
+    if (!selectedBand) return;
+
+    setSetlistsLoading(true);
+    setSetlistsPanelMessage(null);
+    try {
+      const created = await createSetlist(selectedBand.id, payload);
+      await refreshSetlists(selectedBand.id, created.setlistId);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error('Failed to create setlist.');
+    } finally {
+      setSetlistsLoading(false);
+    }
+  };
+
+  const handleUpdateSetlist = async (setlistId: string, payload: UpdateSetlistRequest) => {
+    if (!selectedBand) return;
+
+    setSetlistsLoading(true);
+    setSetlistsPanelMessage(null);
+    try {
+      const updated = await updateSetlist(selectedBand.id, setlistId, payload);
+      const preferred = selectedSetlistId ?? updated.setlistId;
+      await refreshSetlists(selectedBand.id, preferred);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error('Failed to update setlist.');
+    } finally {
+      setSetlistsLoading(false);
+    }
+  };
+
+  const handleDeleteSetlist = async (setlistId: string) => {
+    if (!selectedBand) return;
+
+    setSetlistsLoading(true);
+    setSetlistsPanelMessage(null);
+    try {
+      await deleteSetlist(selectedBand.id, setlistId);
+      const updated = await getSetlists(selectedBand.id);
+      setSetlists(updated);
+
+      if (selectedSetlistId === setlistId) {
+        setSelectedSetlistId(updated[0]?.setlistId ?? null);
+      } else if (selectedSetlistId && !updated.some(s => s.setlistId === selectedSetlistId)) {
+        setSelectedSetlistId(updated[0]?.setlistId ?? null);
+      }
+    } catch (e) {
+      throw e instanceof Error ? e : new Error('Failed to delete setlist.');
+    } finally {
+      setSetlistsLoading(false);
+    }
+  };
+
+  if (songManagementOpen && selectedBand) {
+    return (
+      <SongManagementPage
+        bandId={selectedBand.id}
+        bandName={selectedBand.name}
+        onBack={handleBackFromSongManagement}
+      />
+    );
+  }
+
+  if (ceremonySetlist) {
+    return (
+      <CeremonyModePage
+        setlist={ceremonySetlist}
+        bandName={selectedBand?.name}
+        onEnd={handleEndRitual}
+      />
+    );
+  }
+
+  if (selectedSetlistIdForEdit && selectedBand) {
+    return (
+      <SetlistEditorPage
+        bandId={selectedBand.id}
+        bandName={selectedBand.name}
+        setlistId={selectedSetlistIdForEdit}
+        onBack={handleBackFromEditor}
+      />
+    );
+  }
+
   if (initialLoading) {
     return (
-      <AppShell>
-        <div className="flex min-h-screen items-center justify-center">
-          <p className="animate-pulse text-sm text-zinc-600">Loading RITUAL…</p>
+      <AppShell selectedBandName={selectedBand?.name}>
+        <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
+          <RitualCard className="w-full max-w-xl text-center">
+            <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Initializing</p>
+            <p className="mt-3 text-lg font-semibold text-zinc-200">Preparing stage control data...</p>
+            <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
+              <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
+            </div>
+          </RitualCard>
         </div>
       </AppShell>
     );
   }
 
-  // ── Error ─────────────────────────────────────────────────────────────────
-  if (error) {
+  if (fatalError) {
     return (
-      <AppShell>
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <p className="text-sm text-red-500">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-300"
-            >
+      <AppShell selectedBandName={selectedBand?.name}>
+        <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
+          <RitualCard className="w-full max-w-xl border-red-900/60 text-center">
+            <RitualBadge tone="danger">Error</RitualBadge>
+            <p className="mt-4 text-xl font-semibold text-zinc-100">Connection to control data failed</p>
+            <p className="mt-2 text-sm text-red-300">{fatalError}</p>
+            <RitualButton onClick={() => window.location.reload()} variant="danger" className="mt-6">
               Retry
-            </button>
-          </div>
+            </RitualButton>
+          </RitualCard>
         </div>
       </AppShell>
     );
   }
 
-  // ── Empty ─────────────────────────────────────────────────────────────────
   if (bands.length === 0) {
     return (
       <AppShell>
-        <div className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-zinc-600">No bands found. Add a band to get started.</p>
+        <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
+          <RitualCard className="w-full max-w-xl text-center">
+            <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">No Band Data</p>
+            <p className="mt-3 text-lg font-semibold text-zinc-100">No bands found in RITUAL database.</p>
+            <p className="mt-2 text-sm text-zinc-400">Seed a band to activate dashboard controls.</p>
+          </RitualCard>
         </div>
       </AppShell>
     );
   }
 
-  // ── Dashboard ─────────────────────────────────────────────────────────────
+  const bandSelector = bands.length > 1 ? (
+    <label className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+      Band
+      <select
+        value={selectedBand?.id ?? ''}
+        onChange={e => {
+          const band = bands.find(b => b.id === e.target.value);
+          if (band) setSelectedBand(band);
+        }}
+        className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-100 focus:border-red-600 focus:outline-none"
+      >
+        {bands.map(b => (
+          <option key={b.id} value={b.id}>{b.name}</option>
+        ))}
+      </select>
+    </label>
+  ) : null;
+
   return (
-    <AppShell>
-      <div className="mx-auto max-w-7xl px-6 py-10">
+    <AppShell selectedBandName={selectedBand?.name} rightSlot={bandSelector}>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-hidden px-4 py-4 lg:px-8">
+        <RitualCard className="overflow-hidden border-red-900/35 bg-[radial-gradient(circle_at_top,rgba(127,29,29,0.28),rgba(10,10,10,0.96)_56%)]">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch lg:justify-between">
+            <div className="lg:flex lg:flex-1 lg:items-center">
+              <div>
+                <p className="text-2xl font-black uppercase tracking-[0.12em] text-zinc-100 sm:text-4xl">{selectedBand?.name ?? 'Band'}</p>
+                <p className="mt-2 text-xl font-black uppercase tracking-[0.16em] text-red-300 sm:text-2xl">Command Center</p>
+                <p className="mt-2 max-w-2xl text-sm text-zinc-300">
+                  {selectedBand?.description || "Control songs, setlists, and ceremony flow for tonight's performance."}
+                </p>
+              </div>
+            </div>
 
-        {/* Header */}
-        <header className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-red-600">
-              Ritual
-            </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
-              {selectedBand?.name}
-            </h1>
-            {selectedBand?.description && (
-              <p className="mt-1.5 text-sm text-zinc-500">{selectedBand.description}</p>
-            )}
+            <div className="w-full lg:w-[420px] lg:shrink-0">
+              <div className="grid w-full gap-3 sm:grid-cols-2">
+                <StatCard label="Songs" value={songs.length} />
+                <StatCard label="Setlists" value={setlists.length} accent />
+              </div>
+
+              {selectedBand && (
+                <RitualButton
+                  variant="primary"
+                  className="mt-3 w-full"
+                  onClick={() => setSongManagementOpen(true)}
+                >
+                  Manage songs and albums
+                </RitualButton>
+              )}
+            </div>
           </div>
-
-          {bands.length > 1 && (
-            <select
-              value={selectedBand?.id ?? ''}
-              onChange={e => {
-                const band = bands.find(b => b.id === e.target.value);
-                if (band) setSelectedBand(band);
-              }}
-              className="mt-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
-            >
-              {bands.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          )}
-        </header>
+        </RitualCard>
 
         {bandLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <p className="animate-pulse text-sm text-zinc-600">Loading…</p>
-          </div>
+          <RitualCard className="py-16 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Loading Band Context</p>
+            <p className="mt-3 text-lg text-zinc-300">Syncing songs and setlists...</p>
+            <div className="mx-auto mt-6 h-1.5 w-44 overflow-hidden rounded-full bg-zinc-800">
+              <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
+            </div>
+          </RitualCard>
         ) : (
           <>
-            {/* Stats */}
-            <div className="mb-6 grid grid-cols-3 gap-4">
-              <StatCard label="Songs" value={songs.length} />
-              <StatCard label="Setlists" value={setlists.length} />
-              <StatCard label="Setlist Duration" value={fmtDuration(selectedSetlist)} accent />
-            </div>
-
-            {/* Two-column layout */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-              {/* Songs */}
-              <section className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-                <div className="border-b border-zinc-800 px-5 py-3">
-                  <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-500">
-                    Songs
-                  </h2>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:grid-cols-2">
+              <RitualCard padded={false} className="flex min-h-0 flex-col overflow-hidden">
+                <div className="border-b border-zinc-800 px-5 py-4">
+                  <SectionTitle
+                    eyebrow="Library"
+                    title="Songs"
+                    subtitle="Title, tuning, and duration"
+                    className="items-end"
+                  />
                 </div>
-                <div className="max-h-[480px] overflow-y-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                   <SongList songs={songs} />
                 </div>
-              </section>
+              </RitualCard>
 
-              {/* Setlists */}
-              <section className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-                <div className="border-b border-zinc-800 px-5 py-3">
-                  <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-500">
-                    Setlists
-                  </h2>
+              <RitualCard padded={false} className="flex min-h-0 flex-col overflow-hidden">
+                <div className="border-b border-zinc-800 px-5 py-4">
+                  <SectionTitle
+                    eyebrow="Performance"
+                    title="Setlists"
+                    subtitle="Create, edit, arrange, and launch rituals"
+                    className="items-end"
+                  />
                 </div>
-                <SetlistPanel
-                  setlists={setlists}
-                  selectedSetlist={selectedSetlist}
-                  onSelectSetlist={setSelectedSetlist}
-                  onBeginRitual={handleBeginRitual}
-                />
-              </section>
+                <div className="min-h-0 flex-1">
+                  <SetlistsPanel
+                    setlists={setlists}
+                    selectedSetlistId={selectedSetlistId}
+                    isLoading={setlistsLoading}
+                    panelMessage={setlistsPanelMessage}
+                    onCreateSetlist={handleCreateSetlist}
+                    onUpdateSetlist={handleUpdateSetlist}
+                    onDeleteSetlist={handleDeleteSetlist}
+                    onEditSetlistSongs={handleEditSetlistSongs}
+                    onBeginRitual={handleBeginRitual}
+                  />
+                </div>
+              </RitualCard>
             </div>
-
-            {/* Ceremony preview */}
-            {selectedSetlist && selectedSetlist.songs.length > 0 && (
-              <div className="mt-6">
-                <CeremonyPreview setlist={selectedSetlist} />
-              </div>
-            )}
           </>
         )}
       </div>

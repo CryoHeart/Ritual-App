@@ -25,16 +25,21 @@ builder.Services.AddScoped<IHealthDao, HealthDao>();
 builder.Services.AddScoped<IBandsLogic, BandsLogic>();
 builder.Services.AddScoped<ISongsLogic, SongsLogic>();
 builder.Services.AddScoped<ISetlistsLogic, SetlistsLogic>();
+builder.Services.AddScoped<IAlbumsLogic, AlbumsLogic>();
 builder.Services.AddScoped<ILiveSessionsLogic, LiveSessionsLogic>();
 builder.Services.AddScoped<IBandsDao, BandsDao>();
 builder.Services.AddScoped<ISongsDao, SongsDao>();
 builder.Services.AddScoped<ISetlistsDao, SetlistsDao>();
+builder.Services.AddScoped<IAlbumsDao, AlbumsDao>();
 builder.Services.AddScoped<ILiveSessionsDao, LiveSessionsDao>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(RitualClientCors, policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+        policy.SetIsOriginAllowed(origin =>
+            Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+            uri.IsLoopback)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

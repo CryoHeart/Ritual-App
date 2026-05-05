@@ -1,3 +1,5 @@
+import { RitualCard } from './ui/RitualCard';
+
 interface Props {
   label: string;
   value: string | number;
@@ -6,13 +8,13 @@ interface Props {
 
 export function StatCard({ label, value, accent }: Props) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-6 py-5">
+    <RitualCard className="h-full">
       <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-500">
         {label}
       </p>
-      <p className={`mt-2 text-3xl font-bold tabular-nums tracking-tight ${accent ? 'text-red-500' : 'text-white'}`}>
+      <p className={`mt-3 text-4xl font-semibold tabular-nums tracking-tight ${accent ? 'text-red-400' : 'text-zinc-100'}`}>
         {value}
       </p>
-    </div>
+    </RitualCard>
   );
 }

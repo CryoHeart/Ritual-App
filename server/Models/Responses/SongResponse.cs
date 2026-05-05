@@ -2,7 +2,7 @@ namespace server.Models.Responses;
 
 public class SongResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public string SongId { get; set; } = string.Empty;
 
     public string BandId { get; set; } = string.Empty;
 
@@ -12,9 +12,19 @@ public class SongResponse
 
     public int? DurationSeconds { get; set; }
 
+    public string? AlbumId { get; set; }
+
+    public string? AlbumTitle { get; set; }
+
+    public int? AlbumTrackNumber { get; set; }
+
     public string? Tuning { get; set; }
 
     public string? SongKey { get; set; }
 
     public string? Notes { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -2,6 +2,8 @@ namespace server.Models.Responses;
 
 public class SetlistSongResponse
 {
+    public string SetlistSongId { get; set; } = string.Empty;
+
     public string SongId { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
@@ -10,9 +12,21 @@ public class SetlistSongResponse
 
     public int? DurationSeconds { get; set; }
 
-    public int Order { get; set; }
+    public int PositionIndex { get; set; }
 
     public string? TransitionNotes { get; set; }
 
     public string? PerformanceNotes { get; set; }
+
+    public string? Tuning { get; set; }
+
+    public string? SongKey { get; set; }
+
+    public string? Notes { get; set; }
+
+    public string? AlbumId { get; set; }
+
+    public string? AlbumTitle { get; set; }
+
+    public int? AlbumTrackNumber { get; set; }
 }

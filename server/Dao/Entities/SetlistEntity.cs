@@ -14,6 +14,9 @@ public class SetlistEntity
 
     public DateTime? UpdatedAt { get; set; }
 
-    // Ordered list of song IDs in this setlist (populated by Dao via setlist_songs join)
-    public List<string> SongIds { get; set; } = new();
+    public int TotalSongs { get; set; }
+
+    public int TotalDurationSeconds { get; set; }
+
+    public List<SetlistSongEntity> Songs { get; set; } = new();
 }
