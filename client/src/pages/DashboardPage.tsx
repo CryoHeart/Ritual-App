@@ -16,6 +16,7 @@ import { RitualBadge } from '../components/ui/RitualBadge';
 import { RitualButton } from '../components/ui/RitualButton';
 import { RitualCard } from '../components/ui/RitualCard';
 import { SectionTitle } from '../components/ui/SectionTitle';
+import loginBackground from '../assets/login-background.png';
 import { useAuth } from '../context/AuthContext';
 import type { Band } from '../types/band';
 import type {
@@ -235,7 +236,7 @@ export function DashboardPage() {
 
   if (initialLoading) {
     return (
-      <AppShell selectedBandName={selectedBand?.name}>
+      <AppShell selectedBandName={selectedBand?.name} backgroundImageSrc={loginBackground}>
         <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
           <RitualCard className="w-full max-w-xl text-center">
             <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">Initializing</p>
@@ -251,7 +252,7 @@ export function DashboardPage() {
 
   if (fatalError) {
     return (
-      <AppShell selectedBandName={selectedBand?.name}>
+      <AppShell selectedBandName={selectedBand?.name} backgroundImageSrc={loginBackground}>
         <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
           <RitualCard className="w-full max-w-xl border-red-900/60 text-center">
             <RitualBadge tone="danger">Error</RitualBadge>
@@ -268,7 +269,7 @@ export function DashboardPage() {
 
   if (bands.length === 0) {
     return (
-      <AppShell>
+      <AppShell backgroundImageSrc={loginBackground}>
         <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
           <RitualCard className="w-full max-w-xl text-center">
             <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">No Band Data</p>
@@ -299,7 +300,7 @@ export function DashboardPage() {
   ) : null;
 
   return (
-    <AppShell selectedBandName={selectedBand?.name} rightSlot={bandSelector}>
+    <AppShell selectedBandName={selectedBand?.name} rightSlot={bandSelector} backgroundImageSrc={loginBackground}>
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-hidden px-4 py-4 lg:px-8">
         <RitualCard className="overflow-hidden border-red-900/35 bg-[radial-gradient(circle_at_top,rgba(127,29,29,0.28),rgba(10,10,10,0.96)_56%)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch lg:justify-between">

@@ -6,13 +6,20 @@ interface Props {
   children: ReactNode;
   selectedBandName?: string;
   rightSlot?: ReactNode;
+  backgroundImageSrc?: string;
 }
 
-export function AppShell({ children, selectedBandName, rightSlot }: Props) {
+export function AppShell({ children, selectedBandName, rightSlot, backgroundImageSrc }: Props) {
   const { user, logout } = useAuth();
   const bandName = selectedBandName ?? user?.displayName;
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#090909] text-white antialiased">
+      {backgroundImageSrc ? (
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-55"
+          style={{ backgroundImage: `url(${backgroundImageSrc})` }}
+        />
+      ) : null}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-24 left-[-16%] h-64 w-64 rounded-full bg-red-900/20 blur-3xl" />
         <div className="absolute right-[-10%] top-20 h-72 w-72 rounded-full bg-zinc-600/10 blur-3xl" />
