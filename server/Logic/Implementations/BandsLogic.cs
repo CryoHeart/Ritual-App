@@ -15,9 +15,11 @@ public class BandsLogic : IBandsLogic
         _bandsDao = bandsDao;
     }
 
-    public async Task<IReadOnlyCollection<BandResponse>> GetBandsAsync()
+    public async Task<IReadOnlyCollection<BandResponse>> GetBandsAsync(string? userId = null)
     {
-        var bands = await _bandsDao.GetAllAsync();
+        var bands = userId is not null
+            ? await _bandsDao.GetByUserIdAsync(userId)
+            : await _bandsDao.GetAllAsync();
         return bands.Select(MapBand).ToList();
     }
 

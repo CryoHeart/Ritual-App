@@ -28,6 +28,22 @@ public class BandsDao : IBandsDao
         }).ToList();
     }
 
+    public async Task<IReadOnlyCollection<BandEntity>> GetByUserIdAsync(string userId)
+    {
+        var rows = await _db.Bands
+            .Where(b => _db.BandMembers.Any(m => m.BandId == b.BandId && m.UserId == userId))
+            .ToListAsync();
+        return rows.Select(r => new BandEntity
+        {
+            Id = r.BandId,
+            Name = r.Name,
+            Description = r.Description,
+            CreatedByUserId = r.CreatedByUserId,
+            CreatedAt = r.CreatedAt,
+            UpdatedAt = r.UpdatedAt
+        }).ToList();
+    }
+
     public async Task<BandEntity?> GetByIdAsync(string bandId)
     {
         var r = await _db.Bands.FirstOrDefaultAsync(b => b.BandId == bandId);
@@ -45,23 +61,36 @@ public class BandsDao : IBandsDao
 
     public async Task<BandEntity> CreateAsync(string name, string createdByUserId)
     {
-        var r = new server.Data.Entities.BandEntity
+        var band = new server.Data.Entities.BandEntity
         {
             BandId = Guid.NewGuid().ToString(),
             Name = name,
             CreatedByUserId = createdByUserId,
             CreatedAt = DateTime.UtcNow
         };
-        _db.Bands.Add(r);
+        _db.Bands.Add(band);
+        await _db.SaveChangesAsync(); // persist band first so FK is satisfied
+
+        var member = new server.Data.Entities.BandMemberEntity
+        {
+            BandMemberId = Guid.NewGuid().ToString(),
+            BandId = band.BandId,
+            UserId = createdByUserId,
+            Role = "Admin",
+            Instrument = "Band Account",
+            JoinedAt = band.CreatedAt
+        };
+        _db.BandMembers.Add(member);
         await _db.SaveChangesAsync();
+
         return new BandEntity
         {
-            Id = r.BandId,
-            Name = r.Name,
-            Description = r.Description,
-            CreatedByUserId = r.CreatedByUserId,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            Id = band.BandId,
+            Name = band.Name,
+            Description = band.Description,
+            CreatedByUserId = band.CreatedByUserId,
+            CreatedAt = band.CreatedAt,
+            UpdatedAt = band.UpdatedAt
         };
     }
 }

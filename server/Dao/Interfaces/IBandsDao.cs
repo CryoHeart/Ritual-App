@@ -6,6 +6,8 @@ public interface IBandsDao
 {
     Task<IReadOnlyCollection<BandEntity>> GetAllAsync();
 
+    Task<IReadOnlyCollection<BandEntity>> GetByUserIdAsync(string userId);
+
     Task<BandEntity?> GetByIdAsync(string bandId);
 
     Task<BandEntity> CreateAsync(string name, string createdByUserId);

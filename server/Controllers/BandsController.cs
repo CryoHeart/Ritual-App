@@ -19,9 +19,9 @@ public class BandsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyCollection<BandResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<BandResponse>>> GetBands()
+    public async Task<ActionResult<IReadOnlyCollection<BandResponse>>> GetBands([FromQuery] string? userId = null)
     {
-        return Ok(await _bandsLogic.GetBandsAsync());
+        return Ok(await _bandsLogic.GetBandsAsync(userId));
     }
 
     [HttpGet("{bandId}")]

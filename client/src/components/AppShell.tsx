@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import ritualHeaderCombined from '../assets/ritual-full.png';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export function AppShell({ children, selectedBandName, rightSlot }: Props) {
+  const { user, logout } = useAuth();
+  const bandName = selectedBandName ?? user?.displayName;
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#090909] text-white antialiased">
       <div className="pointer-events-none absolute inset-0">
@@ -28,14 +31,17 @@ export function AppShell({ children, selectedBandName, rightSlot }: Props) {
 
           {/* Right: band badge, extra slot, logout */}
           <div className="flex flex-wrap items-center gap-3">
-            {selectedBandName ? (
+            {bandName ? (
               <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2">
                 <p className="text-[9px] font-black uppercase tracking-[0.28em] text-zinc-300">Band</p>
-                <p className="text-sm font-bold uppercase tracking-[0.12em] text-zinc-100">{selectedBandName}</p>
+                <p className="text-sm font-bold uppercase tracking-[0.12em] text-zinc-100">{bandName}</p>
               </div>
             ) : null}
             {rightSlot}
-            <button className="rounded-lg border border-red-800 bg-red-950/60 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-red-300 transition hover:border-red-600 hover:bg-red-900/60 hover:text-red-100">
+            <button
+              onClick={logout}
+              className="rounded-lg border border-red-800 bg-red-950/60 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-red-300 transition hover:border-red-600 hover:bg-red-900/60 hover:text-red-100"
+            >
               Log out
             </button>
           </div>

@@ -12,9 +12,11 @@ import { AppShell } from '../components/AppShell';
 import { SetlistsPanel } from '../components/Setlists/SetlistsPanel';
 import { SongList } from '../components/SongList';
 import { StatCard } from '../components/StatCard';
+import { RitualBadge } from '../components/ui/RitualBadge';
 import { RitualButton } from '../components/ui/RitualButton';
 import { RitualCard } from '../components/ui/RitualCard';
 import { SectionTitle } from '../components/ui/SectionTitle';
+import { useAuth } from '../context/AuthContext';
 import type { Band } from '../types/band';
 import type {
   CreateSetlistRequest,
@@ -28,6 +30,7 @@ import { SetlistEditorPage } from './SetlistEditorPage';
 import { SongManagementPage } from './SongManagementPage';
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [bands, setBands] = useState<Band[]>([]);
   const [selectedBand, setSelectedBand] = useState<Band | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -45,14 +48,14 @@ export function DashboardPage() {
   const [setlistsPanelMessage, setSetlistsPanelMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    getBands()
+    getBands(user?.userId)
       .then(data => {
         setBands(data);
         if (data.length > 0) setSelectedBand(data[0]);
       })
       .catch(e => setFatalError(e instanceof Error ? e.message : 'Failed to load bands.'))
       .finally(() => setInitialLoading(false));
-  }, []);
+  }, [user?.userId]);
 
   useEffect(() => {
     if (!selectedBand) return;
@@ -269,8 +272,8 @@ export function DashboardPage() {
         <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-7xl items-center justify-center px-6 lg:px-10">
           <RitualCard className="w-full max-w-xl text-center">
             <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">No Band Data</p>
-            <p className="mt-3 text-lg font-semibold text-zinc-100">No bands found in RITUAL database.</p>
-            <p className="mt-2 text-sm text-zinc-400">Seed a band to activate dashboard controls.</p>
+            <p className="mt-3 text-lg font-semibold text-zinc-100">No band found for your account.</p>
+            <p className="mt-2 text-sm text-zinc-400">Your band workspace will appear here once it has been set up.</p>
           </RitualCard>
         </div>
       </AppShell>
