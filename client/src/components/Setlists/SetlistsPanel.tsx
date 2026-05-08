@@ -105,39 +105,43 @@ export function SetlistsPanel({
 
   return (
     <>
-      <div className="border-b border-zinc-800/70 px-5 py-4">
-        <RitualButton variant="primary" size="sm" className="w-full" onClick={openCreateModal}>
-          New Ritual
-        </RitualButton>
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="border-b border-zinc-800/70 px-5 py-4">
+          <RitualButton variant="primary" size="sm" className="w-full" onClick={openCreateModal}>
+            New Ritual
+          </RitualButton>
+        </div>
+
+        {panelMessage && (
+          <div className="border-b border-red-900/45 bg-red-950/20 px-5 py-3 text-xs text-red-300">
+            {panelMessage}
+          </div>
+        )}
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="py-12 text-center text-sm text-zinc-500">Loading setlists...</div>
+          ) : setlists.length === 0 ? (
+            <div className="py-14 text-center text-sm text-zinc-500">No setlists yet. Create your first ritual set.</div>
+          ) : (
+            <div className="space-y-3 px-5 py-4">
+              {setlists.map(setlist => (
+                <SetlistCard
+                  key={setlist.setlistId}
+                  setlist={setlist}
+                  isSelected={selectedSetlistId === setlist.setlistId}
+                  isExpanded={expandedId === setlist.setlistId}
+                  onSelect={id => setExpandedId(prev => (prev === id ? null : id))}
+                  onEdit={openEditModal}
+                  onDelete={setPendingDelete}
+                  onOpenEditor={onEditSetlistSongs}
+                  onBeginRitual={onBeginRitual}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-
-      {panelMessage && (
-        <div className="border-b border-red-900/45 bg-red-950/20 px-5 py-3 text-xs text-red-300">
-          {panelMessage}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="py-12 text-center text-sm text-zinc-500">Loading setlists...</div>
-      ) : setlists.length === 0 ? (
-        <div className="py-14 text-center text-sm text-zinc-500">No setlists yet. Create your first ritual set.</div>
-      ) : (
-        <div className="space-y-3 px-5 py-4">
-          {setlists.map(setlist => (
-            <SetlistCard
-              key={setlist.setlistId}
-              setlist={setlist}
-              isSelected={selectedSetlistId === setlist.setlistId}
-              isExpanded={expandedId === setlist.setlistId}
-              onSelect={id => setExpandedId(prev => (prev === id ? null : id))}
-              onEdit={openEditModal}
-              onDelete={setPendingDelete}
-              onOpenEditor={onEditSetlistSongs}
-              onBeginRitual={onBeginRitual}
-            />
-          ))}
-        </div>
-      )}
 
       <SetlistFormModal
         isOpen={isFormOpen}

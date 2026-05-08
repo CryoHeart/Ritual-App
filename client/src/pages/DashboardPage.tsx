@@ -411,7 +411,7 @@ export function DashboardPage() {
                     className="items-end"
                   />
                 </div>
-                <div className="min-h-0 flex-1">
+                <div className="flex min-h-0 flex-1 overflow-hidden">
                   <SetlistsPanel
                     setlists={setlists}
                     selectedSetlistId={selectedSetlistId}
