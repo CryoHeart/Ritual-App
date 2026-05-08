@@ -54,4 +54,24 @@ public class BandsController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpPut("{bandId}")]
+    [ProducesResponseType(typeof(BandResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BandResponse>> UpdateBandName(string bandId, [FromBody] UpdateBandNameRequest request)
+    {
+        try
+        {
+            return Ok(await _bandsLogic.UpdateBandNameAsync(bandId, request));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 }

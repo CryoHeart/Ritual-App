@@ -26,6 +26,7 @@ import type {
   UpdateSetlistRequest
 } from '../types/setlist';
 import type { Song } from '../types/song';
+import { BandAccountManagementPage } from './BandAccountManagementPage';
 import { CeremonyModePage } from './CeremonyModePage';
 import { SetlistEditorPage } from './SetlistEditorPage';
 import { SongManagementPage } from './SongManagementPage';
@@ -41,6 +42,7 @@ export function DashboardPage() {
   const [selectedSetlistIdForEdit, setSelectedSetlistIdForEdit] = useState<string | null>(null);
   const [ceremonySetlist, setCeremonySetlist] = useState<SetlistDetails | null>(null);
   const [songManagementOpen, setSongManagementOpen] = useState(false);
+  const [bandAccountOpen, setBandAccountOpen] = useState(false);
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [bandLoading, setBandLoading] = useState(false);
@@ -67,6 +69,7 @@ export function DashboardPage() {
     setCeremonySetlist(null);
     setSelectedSetlistIdForEdit(null);
     setSongManagementOpen(false);
+    setBandAccountOpen(false);
     setSelectedSetlistId(null);
     setSongs([]);
     setSetlists([]);
@@ -150,6 +153,27 @@ export function DashboardPage() {
     }
   };
 
+  const handleBandRenamed = (newName: string) => {
+    if (!selectedBand) return;
+    setSelectedBand({ ...selectedBand, name: newName });
+    setBands(prev => prev.map(b => (b.id === selectedBand.id ? { ...b, name: newName } : b)));
+  };
+
+  const handleBackFromBandAccount = () => {
+    setBandAccountOpen(false);
+
+    if (user?.userId) {
+      getBands(user.userId)
+        .then(updatedBands => {
+          setBands(updatedBands);
+          if (!selectedBand) return;
+          const refreshed = updatedBands.find(b => b.id === selectedBand.id);
+          if (refreshed) setSelectedBand(refreshed);
+        })
+        .catch(() => {});
+    }
+  };
+
   const handleCreateSetlist = async (payload: CreateSetlistRequest) => {
     if (!selectedBand) return;
 
@@ -209,6 +233,17 @@ export function DashboardPage() {
         bandId={selectedBand.id}
         bandName={selectedBand.name}
         onBack={handleBackFromSongManagement}
+      />
+    );
+  }
+
+  if (bandAccountOpen && selectedBand) {
+    return (
+      <BandAccountManagementPage
+        bandId={selectedBand.id}
+        bandName={selectedBand.name}
+        onBandRenamed={handleBandRenamed}
+        onBack={handleBackFromBandAccount}
       />
     );
   }
@@ -321,13 +356,22 @@ export function DashboardPage() {
               </div>
 
               {selectedBand && (
-                <RitualButton
-                  variant="primary"
-                  className="mt-3 w-full"
-                  onClick={() => setSongManagementOpen(true)}
-                >
-                  Manage songs and albums
-                </RitualButton>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <RitualButton
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => setSongManagementOpen(true)}
+                  >
+                    Manage songs and albums
+                  </RitualButton>
+                  <RitualButton
+                    variant="neutral"
+                    className="w-full"
+                    onClick={() => setBandAccountOpen(true)}
+                  >
+                    Band account management
+                  </RitualButton>
+                </div>
               )}
             </div>
           </div>

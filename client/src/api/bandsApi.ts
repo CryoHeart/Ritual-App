@@ -9,3 +9,11 @@ export function getBands(userId?: string): Promise<Band[]> {
 export function getBand(bandId: string): Promise<Band> {
   return apiFetch<Band>(`/api/bands/${bandId}`);
 }
+
+export function updateBandName(bandId: string, name: string): Promise<Band> {
+  return apiFetch<Band>(`/api/bands/${bandId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}

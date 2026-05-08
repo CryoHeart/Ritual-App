@@ -6,10 +6,11 @@ import {
   removeSongFromSetlist,
   reorderSetlistSongs
 } from '../api/setlistsApi';
+import { AppShell } from '../components/AppShell';
 import { AlbumSongLibrary } from '../components/SetlistEditor/AlbumSongLibrary';
-import { SetlistEditorHeader } from '../components/SetlistEditor/SetlistEditorHeader';
 import { SetlistSongList } from '../components/SetlistEditor/SetlistSongList';
 import { RitualCard } from '../components/ui/RitualCard';
+import loginBackground from '../assets/login-background.png';
 import type { AlbumWithSongs } from '../types/album';
 import type { SetlistDetails } from '../types/setlist';
 
@@ -147,43 +148,61 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <RitualCard className="w-full max-w-lg text-center">
-          <p className="text-sm uppercase tracking-[0.32em] text-zinc-500">Loading Editor</p>
-          <p className="mt-3 text-xl font-semibold text-zinc-200">Preparing setlist data...</p>
-          <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
-            <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
-          </div>
-        </RitualCard>
-      </div>
+      <AppShell selectedBandName={bandName} backgroundImageSrc={loginBackground}>
+        <div className="flex min-h-full items-center justify-center px-6 py-8">
+          <RitualCard className="w-full max-w-lg text-center">
+            <p className="text-sm uppercase tracking-[0.32em] text-zinc-500">Loading Editor</p>
+            <p className="mt-3 text-xl font-semibold text-zinc-200">Preparing setlist data...</p>
+            <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
+              <div className="ritual-pulse h-full w-1/2 rounded-full bg-red-600" />
+            </div>
+          </RitualCard>
+        </div>
+      </AppShell>
     );
   }
 
   if (!setlist) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <RitualCard className="w-full max-w-lg border-red-900/60 text-center">
-          <p className="text-base text-red-300">{error ?? 'Setlist not found.'}</p>
-          <button onClick={onBack} className="mt-4 text-sm text-zinc-400 underline hover:text-zinc-100">
-            Go back
-          </button>
-        </RitualCard>
-      </div>
+      <AppShell selectedBandName={bandName} backgroundImageSrc={loginBackground}>
+        <div className="flex min-h-full items-center justify-center px-6 py-8">
+          <RitualCard className="w-full max-w-lg border-red-900/60 text-center">
+            <p className="text-base text-red-300">{error ?? 'Setlist not found.'}</p>
+            <button onClick={onBack} className="mt-4 text-sm text-zinc-400 underline hover:text-zinc-100">
+              Go back
+            </button>
+          </RitualCard>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950">
-      <SetlistEditorHeader setlist={setlist} bandName={bandName} onBack={onBack} />
+    <AppShell
+      selectedBandName={bandName}
+      backgroundImageSrc={loginBackground}
+      centerSlot={<h1 className="text-xl font-bold uppercase tracking-[0.2em] text-zinc-100">Setlist editor</h1>}
+      onLogoClick={onBack}
+    >
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-8 py-6">
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">{setlist.name}</p>
+          <button
+            onClick={onBack}
+            className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+          >
+            Back
+          </button>
+        </div>
 
       {error && (
-        <div className="border-b border-red-900/50 bg-red-950/30 px-6 py-3">
-          <div className="mx-auto w-full max-w-6xl px-2 text-base text-red-300">{error}</div>
+        <div className="mb-4 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-base text-red-300">
+          {error}
         </div>
       )}
 
-      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-hidden px-8 py-6">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800/70 xl:flex-row">
+      <div className="flex min-h-0 w-full flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800/70 bg-zinc-950/50 xl:flex-row">
         {/* Left: current setlist */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-r border-zinc-800/60 bg-zinc-950/40">
           <div className="border-b border-zinc-800/60 bg-zinc-900/40 px-6 py-4">
@@ -192,7 +211,16 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-400">
                   Ritual Sequence
                 </p>
-                <p className="mt-0.5 text-sm text-zinc-500">{localSongs.length} songs in order</p>
+                <p className="mt-0.5 text-sm text-zinc-500">
+                  {localSongs.length} songs
+                  {localSongs.length > 0 && (() => {
+                    const total = localSongs.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0);
+                    if (total <= 0) return null;
+                    const m = Math.floor(total / 60);
+                    const s = total % 60;
+                    return <> &middot; {m}:{s.toString().padStart(2, '0')} total</>;
+                  })()}
+                </p>
               </div>
               {isDirty && (
                 <button
@@ -235,7 +263,7 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
         </div>
       </div>
       </div>
-
-    </div>
+      </div>
+    </AppShell>
   );
 }

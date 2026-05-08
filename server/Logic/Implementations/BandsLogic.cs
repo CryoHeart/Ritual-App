@@ -52,6 +52,28 @@ public class BandsLogic : IBandsLogic
         return MapBand(created);
     }
 
+    public async Task<BandResponse> UpdateBandNameAsync(string bandId, UpdateBandNameRequest request)
+    {
+        var name = request.Name?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ValidationException("Band name is required.");
+        }
+
+        if (name.Length > 100)
+        {
+            throw new ValidationException("Band name cannot exceed 100 characters.");
+        }
+
+        var updated = await _bandsDao.UpdateNameAsync(bandId, name);
+        if (updated is null)
+        {
+            throw new NotFoundException("Band was not found.");
+        }
+
+        return MapBand(updated);
+    }
+
     private static BandResponse MapBand(server.Dao.Entities.BandEntity band)
     {
         return new BandResponse

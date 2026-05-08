@@ -7,4 +7,6 @@ public interface IAuthLogic
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
     Task<LoginResponse> RegisterAsync(RegisterRequest request);
+    Task<LoginResponse> UpdateEmailAsync(UpdateEmailRequest request);
+    Task UpdatePasswordAsync(UpdatePasswordRequest request);
 }

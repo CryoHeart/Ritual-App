@@ -5,6 +5,8 @@ import {
   getAlbumsWithSongs,
   updateAlbum
 } from '../api/albumsApi';
+import loginBackground from '../assets/login-background.png';
+import { AppShell } from '../components/AppShell';
 import { createSong, deleteSong, updateSong } from '../api/songsApi';
 import { AlbumSection } from '../components/SongManagement/AlbumSection';
 import { AlbumFormModal } from '../components/SongManagement/AlbumFormModal';
@@ -177,29 +179,24 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
   // ---- Render ----
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950">
-      {/* Header */}
-      <header className="border-b border-zinc-800/60 bg-zinc-900/60 px-6 py-5 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-5xl items-center">
+    <AppShell
+      selectedBandName={bandName}
+      backgroundImageSrc={loginBackground}
+      centerSlot={<h1 className="text-xl font-bold uppercase tracking-[0.2em] text-zinc-100">Song management</h1>}
+      onLogoClick={onBack}
+    >
+      <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-8 py-6">
+        <div className="mb-5 flex justify-end">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-100"
+            className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white"
           >
-            ← Back
+            Back
           </button>
-          <div className="ml-5 h-5 w-px bg-zinc-700" />
-          <div className="ml-9">
-            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-red-500">
-              {bandName ?? 'Band'}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Song Management</h1>
-          </div>
         </div>
-      </header>
 
-      {/* Stats strip */}
-      <div className="border-b border-zinc-800/40 bg-zinc-900/30 px-6 py-3">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-8">
+        <div className="mb-5 rounded-xl border border-zinc-800/50 bg-zinc-900/35 px-5 py-3">
+          <div className="flex w-full items-center gap-8">
           <span className="text-sm text-zinc-500">
             <span className="font-semibold text-zinc-300">{realAlbums.length}</span> albums
           </span>
@@ -209,8 +206,7 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <RitualCard className="w-full max-w-md text-center">
@@ -231,7 +227,7 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
             </RitualCard>
           </div>
         ) : (
-          <div className="mx-auto max-w-5xl space-y-5">
+          <div className="max-w-5xl space-y-5">
             {/* Search */}
             <div className="relative">
               <input
@@ -297,7 +293,6 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
         )}
       </div>
 
-      {/* Modals */}
       <AlbumFormModal
         isOpen={albumModalOpen}
         album={editingAlbum}
@@ -334,6 +329,7 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
         onCancel={() => setConfirmSong(null)}
         onConfirm={handleConfirmDeleteSong}
       />
-    </div>
+      </div>
+    </AppShell>
   );
 }

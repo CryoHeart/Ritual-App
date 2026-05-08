@@ -10,4 +10,6 @@ public interface IBandsLogic
     Task<BandResponse> GetBandAsync(string bandId);
 
     Task<BandResponse> CreateBandAsync(CreateBandRequest request);
+
+    Task<BandResponse> UpdateBandNameAsync(string bandId, UpdateBandNameRequest request);
 }

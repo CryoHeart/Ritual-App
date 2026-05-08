@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import loginBackground from '../assets/login-background.png';
+import { AppShell } from '../components/AppShell';
 import type { SetlistDetails } from '../types/setlist';
 import { CeremonyControls } from '../components/CeremonyControls';
 import { CeremonyProgress } from '../components/CeremonyProgress';
 import { CeremonySongCard } from '../components/CeremonySongCard';
-import { RitualBadge } from '../components/ui/RitualBadge';
 import { RitualButton } from '../components/ui/RitualButton';
 import { RitualCard } from '../components/ui/RitualCard';
 
@@ -75,60 +76,58 @@ export function CeremonyModePage({ setlist, bandName, onEnd }: CeremonyModePageP
   }, [isEmpty, onEnd, totalSongs]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_15%_-10%,rgba(127,29,29,0.32),transparent_42%),radial-gradient(circle_at_90%_0%,rgba(39,39,42,0.4),transparent_40%),#050506] text-zinc-100">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-10">
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-zinc-800/80 pb-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.38em] text-zinc-300">Ritual</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white lg:text-5xl">Ceremony Mode</h1>
-            <p className="mt-2 text-sm text-zinc-400">Live stage control and song progression.</p>
-          </div>
+    <AppShell
+      selectedBandName={bandName}
+      backgroundImageSrc={loginBackground}
+      centerSlot={
+        <div className="leading-tight">
+          <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-zinc-100">Live mode</h1>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">{setlist.name}</p>
+        </div>
+      }
+      onLogoClick={onEnd}
+    >
+      <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_15%_-10%,rgba(127,29,29,0.32),transparent_42%),radial-gradient(circle_at_90%_0%,rgba(39,39,42,0.4),transparent_40%),transparent] text-zinc-100">
+        <div className="mx-auto flex min-h-full max-w-7xl flex-col px-6 py-8 lg:px-10">
+          {isEmpty ? (
+            <RitualCard className="flex flex-1 flex-col items-center justify-center gap-6 rounded-2xl px-8 py-16 text-center">
+              <p className="text-sm uppercase tracking-[0.35em] text-red-500">Setlist Empty</p>
+              <h2 className="max-w-2xl text-3xl font-semibold text-zinc-100">This setlist has no songs yet.</h2>
+              <p className="max-w-xl text-zinc-400">Add songs to the setlist in Dashboard to begin Live mode.</p>
+              <RitualButton onClick={onEnd} variant="danger" size="lg">
+                End Ritual
+              </RitualButton>
+            </RitualCard>
+          ) : (
+            <>
+              <CeremonyProgress
+                currentIndex={safeIndex}
+                totalSongs={totalSongs}
+                totalDurationLabel={formatMmSs(totalSetlistSeconds)}
+              />
 
-          <div className="flex flex-wrap items-center gap-2">
-            {bandName ? <RitualBadge tone="accent">Band: {bandName}</RitualBadge> : null}
-            <RitualBadge>{setlist.name}</RitualBadge>
-            <RitualBadge>{totalSongs} songs</RitualBadge>
-          </div>
-        </header>
+              <CeremonySongCard
+                currentTitle={currentSetlistSong.title}
+                currentDurationLabel={formatMmSs(currentDuration)}
+                currentTuning={currentTuning}
+                currentNotes={currentNotes}
+                nextTitle={nextSong ? nextSong.title : 'End of Setlist'}
+                nextNotes={nextNotes}
+                currentIndex={safeIndex}
+                totalSongs={totalSongs}
+              />
 
-        {isEmpty ? (
-          <RitualCard className="flex flex-1 flex-col items-center justify-center gap-6 rounded-2xl px-8 py-16 text-center">
-            <p className="text-sm uppercase tracking-[0.35em] text-red-500">Setlist Empty</p>
-            <h2 className="max-w-2xl text-3xl font-semibold text-zinc-100">This setlist has no songs yet.</h2>
-            <p className="max-w-xl text-zinc-400">Add songs to the setlist in Dashboard to begin Ceremony Mode.</p>
-            <RitualButton onClick={onEnd} variant="danger" size="lg">
-              End Ritual
-            </RitualButton>
-          </RitualCard>
-        ) : (
-          <>
-            <CeremonyProgress
-              currentIndex={safeIndex}
-              totalSongs={totalSongs}
-              totalDurationLabel={formatMmSs(totalSetlistSeconds)}
-            />
-
-            <CeremonySongCard
-              currentTitle={currentSetlistSong.title}
-              currentDurationLabel={formatMmSs(currentDuration)}
-              currentTuning={currentTuning}
-              currentNotes={currentNotes}
-              nextTitle={nextSong ? nextSong.title : 'End of Setlist'}
-              nextNotes={nextNotes}
-              currentIndex={safeIndex}
-              totalSongs={totalSongs}
-            />
-
-            <CeremonyControls
-              isFirstSong={isFirstSong}
-              isLastSong={isLastSong}
-              onPrevious={() => setCurrentIndex(index => Math.max(index - 1, 0))}
-              onNext={() => setCurrentIndex(index => Math.min(index + 1, totalSongs - 1))}
-              onEnd={onEnd}
-            />
-          </>
-        )}
+              <CeremonyControls
+                isFirstSong={isFirstSong}
+                isLastSong={isLastSong}
+                onPrevious={() => setCurrentIndex(index => Math.max(index - 1, 0))}
+                onNext={() => setCurrentIndex(index => Math.min(index + 1, totalSongs - 1))}
+                onEnd={onEnd}
+              />
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

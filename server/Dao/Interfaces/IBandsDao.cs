@@ -11,4 +11,6 @@ public interface IBandsDao
     Task<BandEntity?> GetByIdAsync(string bandId);
 
     Task<BandEntity> CreateAsync(string name, string createdByUserId);
+
+    Task<BandEntity?> UpdateNameAsync(string bandId, string name);
 }

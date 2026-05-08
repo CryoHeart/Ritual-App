@@ -14,6 +14,12 @@ public class UsersDao : IUsersDao
         _db = db;
     }
 
+    public async Task<UserEntity?> GetByIdAsync(string userId)
+    {
+        return await _db.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+    }
+
     public async Task<UserEntity?> GetByEmailAsync(string email)
     {
         return await _db.Users
@@ -23,6 +29,12 @@ public class UsersDao : IUsersDao
     public async Task CreateAsync(UserEntity user)
     {
         _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(UserEntity user)
+    {
+        _db.Users.Update(user);
         await _db.SaveChangesAsync();
     }
 }

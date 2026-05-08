@@ -49,4 +49,51 @@ public class AuthController : ControllerBase
             return Conflict(new { error = ex.Message });
         }
     }
+
+    [HttpPut("email")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<LoginResponse>> UpdateEmail([FromBody] UpdateEmailRequest request)
+    {
+        try
+        {
+            var updated = await _authLogic.UpdateEmailAsync(request);
+            return Ok(updated);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ConflictException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
+    {
+        try
+        {
+            await _authLogic.UpdatePasswordAsync(request);
+            return NoContent();
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 }

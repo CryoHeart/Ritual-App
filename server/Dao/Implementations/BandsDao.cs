@@ -93,4 +93,24 @@ public class BandsDao : IBandsDao
             UpdatedAt = band.UpdatedAt
         };
     }
+
+    public async Task<BandEntity?> UpdateNameAsync(string bandId, string name)
+    {
+        var band = await _db.Bands.FirstOrDefaultAsync(b => b.BandId == bandId);
+        if (band is null) return null;
+
+        band.Name = name;
+        band.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return new BandEntity
+        {
+            Id = band.BandId,
+            Name = band.Name,
+            Description = band.Description,
+            CreatedByUserId = band.CreatedByUserId,
+            CreatedAt = band.CreatedAt,
+            UpdatedAt = band.UpdatedAt
+        };
+    }
 }

@@ -6,10 +6,12 @@ interface Props {
   children: ReactNode;
   selectedBandName?: string;
   rightSlot?: ReactNode;
+  centerSlot?: ReactNode;
   backgroundImageSrc?: string;
+  onLogoClick?: () => void;
 }
 
-export function AppShell({ children, selectedBandName, rightSlot, backgroundImageSrc }: Props) {
+export function AppShell({ children, selectedBandName, rightSlot, centerSlot, backgroundImageSrc, onLogoClick }: Props) {
   const { user, logout } = useAuth();
   const bandName = selectedBandName ?? user?.displayName;
   return (
@@ -26,14 +28,29 @@ export function AppShell({ children, selectedBandName, rightSlot, backgroundImag
       </div>
 
       <header className="relative z-10 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-10">
+        <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-10">
+          {centerSlot ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-40 text-center">
+              {centerSlot}
+            </div>
+          ) : null}
           {/* Left: logo + title */}
           <div className="flex items-center">
-            <img
-              src={ritualHeaderCombined}
-              alt="Ritual"
-              className="h-24 w-[720px] object-contain object-left drop-shadow-[0_0_18px_rgba(239,68,68,0.45)]"
-            />
+            {onLogoClick ? (
+              <button onClick={onLogoClick} className="focus:outline-none" aria-label="Go to dashboard">
+                <img
+                  src={ritualHeaderCombined}
+                  alt="Ritual"
+                  className="h-24 w-[720px] object-contain object-left drop-shadow-[0_0_28px_rgba(239,68,68,0.85)] brightness-125"
+                />
+              </button>
+            ) : (
+              <img
+                src={ritualHeaderCombined}
+                alt="Ritual"
+                className="h-24 w-[720px] object-contain object-left drop-shadow-[0_0_28px_rgba(239,68,68,0.85)] brightness-125"
+              />
+            )}
           </div>
 
           {/* Right: band badge, extra slot, logout */}
