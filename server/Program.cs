@@ -5,6 +5,8 @@ using server.Dao.Interfaces;
 using server.Data;
 using server.Logic.Implementations;
 using server.Logic.Interfaces;
+using server.Services.Export.Implementations;
+using server.Services.Export.Interfaces;
 using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +58,10 @@ builder.Services.AddScoped<ISongsDao, SongsDao>();
 builder.Services.AddScoped<ISetlistsDao, SetlistsDao>();
 builder.Services.AddScoped<IAlbumsDao, AlbumsDao>();
 builder.Services.AddScoped<ILiveSessionsDao, LiveSessionsDao>();
+builder.Services.AddScoped<ISetlistExportDao, SetlistExportDao>();
+builder.Services.AddScoped<ISetlistExportLogic, SetlistExportLogic>();
+builder.Services.AddSingleton<ISetlistPdfExportService, SetlistPdfExportService>();
+builder.Services.AddSingleton<ISetlistDocxExportService, SetlistDocxExportService>();
 builder.Services.AddMemoryCache();
 builder.Services
     .AddHttpClient<IMusicBrainzClient, MusicBrainzClient>(client =>

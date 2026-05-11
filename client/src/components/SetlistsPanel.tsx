@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { exportSetlistDocx, exportSetlistPdf } from '../api/setlistExportsApi';
 import type { Setlist } from '../types/setlist';
 import { RitualButton } from './ui/RitualButton';
 
@@ -12,6 +14,7 @@ function fmtDuration(seconds: number): string {
 }
 
 interface Props {
+  bandId: string;
   setlists: Setlist[];
   isLoading: boolean;
   onCreate: () => void;
@@ -20,7 +23,26 @@ interface Props {
   onBeginRitual: (setlistId: string) => void;
 }
 
-export function SetlistsPanel({ setlists, isLoading, onCreate, onEdit, onDelete, onBeginRitual }: Props) {
+export function SetlistsPanel({ bandId, setlists, isLoading, onCreate, onEdit, onDelete, onBeginRitual }: Props) {
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async (setlistId: string, format: 'pdf' | 'docx') => {
+    setExportingId(`${setlistId}-${format}`);
+    setExportError(null);
+    try {
+      if (format === 'pdf') {
+        await exportSetlistPdf(bandId, setlistId);
+      } else {
+        await exportSetlistDocx(bandId, setlistId);
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : 'Export failed. Please try again.');
+    } finally {
+      setExportingId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="py-12 text-center text-sm text-zinc-500">Loading setlists...</div>
@@ -40,6 +62,11 @@ export function SetlistsPanel({ setlists, isLoading, onCreate, onEdit, onDelete,
 
   return (
     <div className="flex flex-col divide-y divide-zinc-800/70">
+      {exportError && (
+        <div className="mx-5 mt-3 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+          {exportError}
+        </div>
+      )}
       {setlists.map(sl => (
         <div key={sl.setlistId} className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-zinc-800/20">
           <div className="flex items-start justify-between gap-3">
@@ -73,6 +100,24 @@ export function SetlistsPanel({ setlists, isLoading, onCreate, onEdit, onDelete,
               className="flex-1"
             >
               Begin Ritual
+            </RitualButton>
+            <RitualButton
+              variant="ghost"
+              size="sm"
+              disabled={!!exportingId}
+              onClick={() => handleExport(sl.setlistId, 'pdf')}
+              className="flex-1"
+            >
+              {exportingId === `${sl.setlistId}-pdf` ? 'Exporting…' : 'PDF'}
+            </RitualButton>
+            <RitualButton
+              variant="ghost"
+              size="sm"
+              disabled={!!exportingId}
+              onClick={() => handleExport(sl.setlistId, 'docx')}
+              className="flex-1"
+            >
+              {exportingId === `${sl.setlistId}-docx` ? 'Exporting…' : 'Word'}
             </RitualButton>
             <RitualButton
               variant="danger"

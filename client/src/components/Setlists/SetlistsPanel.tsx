@@ -10,6 +10,7 @@ import { SetlistCard } from './SetlistCard';
 import { SetlistFormModal } from './SetlistFormModal';
 
 interface SetlistsPanelProps {
+  bandId: string;
   setlists: SetlistSummary[];
   isLoading: boolean;
   panelMessage?: string | null;
@@ -21,6 +22,7 @@ interface SetlistsPanelProps {
 }
 
 export function SetlistsPanel({
+  bandId,
   setlists,
   isLoading,
   panelMessage,
@@ -126,6 +128,7 @@ export function SetlistsPanel({
               {setlists.map(setlist => (
                 <SetlistCard
                   key={setlist.setlistId}
+                  bandId={bandId}
                   setlist={setlist}
                   isExpanded={expandedId === setlist.setlistId}
                   onSelect={id => setExpandedId(prev => (prev === id ? null : id))}

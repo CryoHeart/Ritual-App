@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { exportSetlistDocx, exportSetlistPdf } from '../../api/setlistExportsApi';
 import type { SetlistSummary } from '../../types/setlist';
 import { RitualButton } from '../ui/RitualButton';
 
@@ -15,6 +17,7 @@ function formatDuration(seconds: number): string {
 }
 
 interface SetlistCardProps {
+  bandId: string;
   setlist: SetlistSummary;
   isExpanded: boolean;
   onSelect: (id: string) => void;
@@ -25,6 +28,7 @@ interface SetlistCardProps {
 }
 
 export function SetlistCard({
+  bandId,
   setlist,
   isExpanded,
   onSelect,
@@ -33,6 +37,26 @@ export function SetlistCard({
   onOpenEditor,
   onBeginRitual
 }: SetlistCardProps) {
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'docx' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async (format: 'pdf' | 'docx', e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExportingFormat(format);
+    setExportError(null);
+    try {
+      if (format === 'pdf') {
+        await exportSetlistPdf(bandId, setlist.setlistId);
+      } else {
+        await exportSetlistDocx(bandId, setlist.setlistId);
+      }
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed. Please try again.');
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div
       onClick={() => onSelect(setlist.setlistId)}
@@ -55,24 +79,49 @@ export function SetlistCard({
       </div>
 
       {isExpanded && (
-        <div className="mt-3 grid grid-cols-2 gap-2 xl:grid-cols-4" onClick={e => e.stopPropagation()}>
-          <RitualButton variant="ghost" size="sm" onClick={() => onEdit(setlist)}>
-            Edit
-          </RitualButton>
-          <RitualButton variant="danger" size="sm" onClick={() => onDelete(setlist)}>
-            Delete
-          </RitualButton>
-          <RitualButton variant="neutral" size="sm" onClick={() => onOpenEditor(setlist.setlistId)}>
-            Open Editor
-          </RitualButton>
-          <RitualButton
-            variant="primary"
-            size="sm"
-            disabled={setlist.totalSongs === 0}
-            onClick={() => onBeginRitual(setlist.setlistId)}
-          >
-            Begin Ritual
-          </RitualButton>
+        <div className="mt-3" onClick={e => e.stopPropagation()}>
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+            <RitualButton variant="ghost" size="sm" onClick={() => onEdit(setlist)}>
+              Edit
+            </RitualButton>
+            <RitualButton variant="danger" size="sm" onClick={() => onDelete(setlist)}>
+              Delete
+            </RitualButton>
+            <RitualButton variant="neutral" size="sm" onClick={() => onOpenEditor(setlist.setlistId)}>
+              Open Editor
+            </RitualButton>
+            <RitualButton
+              variant="primary"
+              size="sm"
+              disabled={setlist.totalSongs === 0}
+              onClick={() => onBeginRitual(setlist.setlistId)}
+            >
+              Begin Ritual
+            </RitualButton>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <RitualButton
+              variant="ghost"
+              size="sm"
+              disabled={!!exportingFormat}
+              onClick={e => handleExport('pdf', e)}
+            >
+              {exportingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
+            </RitualButton>
+            <RitualButton
+              variant="ghost"
+              size="sm"
+              disabled={!!exportingFormat}
+              onClick={e => handleExport('docx', e)}
+            >
+              {exportingFormat === 'docx' ? 'Exporting…' : 'Export Word'}
+            </RitualButton>
+          </div>
+
+          {exportError && (
+            <p className="mt-2 text-xs text-red-300">{exportError}</p>
+          )}
         </div>
       )}
     </div>

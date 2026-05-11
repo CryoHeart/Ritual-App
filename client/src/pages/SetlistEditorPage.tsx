@@ -6,6 +6,7 @@ import {
   removeSongFromSetlist,
   reorderSetlistSongs
 } from '../api/setlistsApi';
+import { exportSetlistDocx, exportSetlistPdf } from '../api/setlistExportsApi';
 import { AppShell } from '../components/AppShell';
 import { AlbumSongLibrary } from '../components/SetlistEditor/AlbumSongLibrary';
 import { SetlistSongList } from '../components/SetlistEditor/SetlistSongList';
@@ -29,6 +30,24 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
   const [loading, setLoading] = useState(true);
   const [songOp, setSongOp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'docx' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    setExportingFormat(format);
+    setExportError(null);
+    try {
+      if (format === 'pdf') {
+        await exportSetlistPdf(bandId, setlistId);
+      } else {
+        await exportSetlistDocx(bandId, setlistId);
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : 'Export failed. Please try again.');
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   const isDirty = (() => {
     if (localSongs.length !== savedSongs.length) return true;
@@ -187,13 +206,35 @@ export function SetlistEditorPage({ bandId, bandName, setlistId, onBack }: Props
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-8 py-6">
         <div className="mb-5 flex items-center justify-between">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">{setlist.name}</p>
-          <button
-            onClick={onBack}
-            className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white"
-          >
-            Back
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={!!exportingFormat}
+              onClick={() => handleExport('pdf')}
+              className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white disabled:opacity-50"
+            >
+              {exportingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
+            </button>
+            <button
+              disabled={!!exportingFormat}
+              onClick={() => handleExport('docx')}
+              className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white disabled:opacity-50"
+            >
+              {exportingFormat === 'docx' ? 'Exporting…' : 'Export Word'}
+            </button>
+            <button
+              onClick={onBack}
+              className="rounded-lg border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+            >
+              Back
+            </button>
+          </div>
         </div>
+
+      {exportError && (
+        <div className="mb-4 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-xs text-red-300">
+          {exportError}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-base text-red-300">
