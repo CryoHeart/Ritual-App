@@ -20,10 +20,11 @@ import type { Song, CreateSongRequest, UpdateSongRequest } from '../types/song';
 interface Props {
   bandId: string;
   bandName?: string;
+  onImportFromMusicBrainz: () => void;
   onBack: () => void;
 }
 
-export function SongManagementPage({ bandId, bandName, onBack }: Props) {
+export function SongManagementPage({ bandId, bandName, onImportFromMusicBrainz, onBack }: Props) {
   const [albums, setAlbums] = useState<AlbumWithSongs[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
   // Confirm delete state
   const [confirmAlbum, setConfirmAlbum] = useState<AlbumWithSongs | null>(null);
   const [confirmSong, setConfirmSong] = useState<{ songId: string; title: string } | null>(null);
+  const [confirmDeleteAllUnassigned, setConfirmDeleteAllUnassigned] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -173,6 +175,21 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
     }
   };
 
+  const handleConfirmDeleteAllUnassigned = async () => {
+    const unassigned = albums.find(a => a.albumId === null);
+    if (!unassigned) return;
+    setIsDeleting(true);
+    try {
+      await Promise.all(unassigned.songs.map(s => deleteSong(bandId, s.songId)));
+      await refresh();
+      setConfirmDeleteAllUnassigned(false);
+    } catch {
+      // Leave dialog open on error — user can retry
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const totalSongs = albums.reduce((sum, a) => sum + a.songs.length, 0);
   const realAlbums = albums.filter(a => a.albumId !== null);
 
@@ -246,12 +263,15 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
               )}
             </div>
 
-            <div className="grid w-full grid-cols-2 gap-3">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
               <RitualButton variant="neutral" size="md" className="w-full" onClick={handleOpenNewAlbum}>
                 + New Album
               </RitualButton>
               <RitualButton variant="primary" size="md" className="w-full" onClick={handleOpenNewSong}>
                 + New Song
+              </RitualButton>
+              <RitualButton variant="ghost" size="md" className="w-full" onClick={onImportFromMusicBrainz}>
+                Import from MusicBrainz
               </RitualButton>
             </div>
 
@@ -270,6 +290,7 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
                     searchQuery={searchQuery}
                     onEditAlbum={album.albumId ? () => handleOpenEditAlbum(album) : undefined}
                     onDeleteAlbum={album.albumId ? () => setConfirmAlbum(album) : undefined}
+                    onDeleteAllSongs={album.albumId === null ? () => setConfirmDeleteAllUnassigned(true) : undefined}
                     onEditSong={handleOpenEditSong}
                     onDeleteSong={songId => {
                       const song = album.songs.find(s => s.songId === songId);
@@ -315,7 +336,11 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
       <ConfirmDialog
         isOpen={confirmAlbum !== null}
         title="Delete Album"
-        message={`Delete album "${confirmAlbum?.title}"? Songs will not be deleted; they will become Unassigned.`}
+        message={confirmAlbum
+          ? confirmAlbum.songs.length > 0
+            ? `Delete album "${confirmAlbum.title}"? This will permanently delete the album and all ${confirmAlbum.songs.length} song${confirmAlbum.songs.length === 1 ? '' : 's'} within it. This cannot be undone.`
+            : `Delete album "${confirmAlbum.title}"? This album has no songs and will be permanently deleted.`
+          : ''}
         isConfirming={isDeleting}
         onCancel={() => setConfirmAlbum(null)}
         onConfirm={handleConfirmDeleteAlbum}
@@ -328,6 +353,15 @@ export function SongManagementPage({ bandId, bandName, onBack }: Props) {
         isConfirming={isDeleting}
         onCancel={() => setConfirmSong(null)}
         onConfirm={handleConfirmDeleteSong}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDeleteAllUnassigned}
+        title="Delete All Unassigned Songs"
+        message={`Delete all ${albums.find(a => a.albumId === null)?.songs.length ?? 0} unassigned song(s)? This will also remove them from any setlists. This cannot be undone.`}
+        isConfirming={isDeleting}
+        onCancel={() => setConfirmDeleteAllUnassigned(false)}
+        onConfirm={handleConfirmDeleteAllUnassigned}
       />
       </div>
     </AppShell>

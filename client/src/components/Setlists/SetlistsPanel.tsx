@@ -11,7 +11,6 @@ import { SetlistFormModal } from './SetlistFormModal';
 
 interface SetlistsPanelProps {
   setlists: SetlistSummary[];
-  selectedSetlistId: string | null;
   isLoading: boolean;
   panelMessage?: string | null;
   onCreateSetlist: (payload: CreateSetlistRequest) => Promise<void>;
@@ -23,7 +22,6 @@ interface SetlistsPanelProps {
 
 export function SetlistsPanel({
   setlists,
-  selectedSetlistId,
   isLoading,
   panelMessage,
   onCreateSetlist,
@@ -129,7 +127,6 @@ export function SetlistsPanel({
                 <SetlistCard
                   key={setlist.setlistId}
                   setlist={setlist}
-                  isSelected={selectedSetlistId === setlist.setlistId}
                   isExpanded={expandedId === setlist.setlistId}
                   onSelect={id => setExpandedId(prev => (prev === id ? null : id))}
                   onEdit={openEditModal}

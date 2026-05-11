@@ -2,6 +2,7 @@ export interface Song {
   songId: string;
   bandId: string;
   title: string;
+  musicBrainzRecordingId?: string;
   bpm?: number;
   durationSeconds?: number;
   albumId?: string;

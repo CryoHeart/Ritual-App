@@ -33,6 +33,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = r.AlbumId,
             BandId = r.BandId,
             Title = r.Title,
+            MusicBrainzReleaseGroupId = r.MusicBrainzReleaseGroupId,
+            MusicBrainzReleaseId = r.MusicBrainzReleaseId,
             ReleaseYear = r.ReleaseYear,
             SortOrder = r.SortOrder,
             CreatedAt = r.CreatedAt,
@@ -47,6 +49,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = Guid.NewGuid().ToString(),
             BandId = bandId,
             Title = title,
+            MusicBrainzReleaseGroupId = null,
+            MusicBrainzReleaseId = null,
             ReleaseYear = releaseYear,
             SortOrder = sortOrder,
             CreatedAt = DateTime.UtcNow
@@ -58,6 +62,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = r.AlbumId,
             BandId = r.BandId,
             Title = r.Title,
+            MusicBrainzReleaseGroupId = r.MusicBrainzReleaseGroupId,
+            MusicBrainzReleaseId = r.MusicBrainzReleaseId,
             ReleaseYear = r.ReleaseYear,
             SortOrder = r.SortOrder,
             CreatedAt = r.CreatedAt,
@@ -78,6 +84,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = r.AlbumId,
             BandId = r.BandId,
             Title = r.Title,
+            MusicBrainzReleaseGroupId = r.MusicBrainzReleaseGroupId,
+            MusicBrainzReleaseId = r.MusicBrainzReleaseId,
             ReleaseYear = r.ReleaseYear,
             SortOrder = r.SortOrder,
             CreatedAt = r.CreatedAt,
@@ -88,6 +96,8 @@ public class AlbumsDao : IAlbumsDao
     public async Task DeleteAsync(string albumId)
     {
         var r = await _db.Albums.FirstAsync(a => a.AlbumId == albumId);
+        var songs = await _db.Songs.Where(s => s.AlbumId == albumId).ToListAsync();
+        _db.Songs.RemoveRange(songs);
         _db.Albums.Remove(r);
         await _db.SaveChangesAsync();
     }
@@ -105,6 +115,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = r.AlbumId,
             BandId = r.BandId,
             Title = r.Title,
+            MusicBrainzReleaseGroupId = r.MusicBrainzReleaseGroupId,
+            MusicBrainzReleaseId = r.MusicBrainzReleaseId,
             ReleaseYear = r.ReleaseYear,
             SortOrder = r.SortOrder,
             CreatedAt = r.CreatedAt,
@@ -135,6 +147,7 @@ public class AlbumsDao : IAlbumsDao
                     Id = s.SongId,
                     BandId = s.BandId,
                     Title = s.Title,
+                    MusicBrainzRecordingId = s.MusicBrainzRecordingId,
                     Bpm = s.Bpm,
                     DurationSeconds = s.DurationSeconds,
                     Tuning = s.Tuning,
@@ -151,6 +164,8 @@ public class AlbumsDao : IAlbumsDao
             AlbumId = r.AlbumId,
             BandId = r.BandId,
             Title = r.Title,
+            MusicBrainzReleaseGroupId = r.MusicBrainzReleaseGroupId,
+            MusicBrainzReleaseId = r.MusicBrainzReleaseId,
             ReleaseYear = r.ReleaseYear,
             SortOrder = r.SortOrder,
             CreatedAt = r.CreatedAt,
@@ -166,6 +181,7 @@ public class AlbumsDao : IAlbumsDao
                 Id = s.SongId,
                 BandId = s.BandId,
                 Title = s.Title,
+                MusicBrainzRecordingId = s.MusicBrainzRecordingId,
                 Bpm = s.Bpm,
                 DurationSeconds = s.DurationSeconds,
                 Tuning = s.Tuning,

@@ -8,6 +8,8 @@ public class AlbumSongResponse
 
     public string Title { get; set; } = string.Empty;
 
+    public string? MusicBrainzRecordingId { get; set; }
+
     public int? Bpm { get; set; }
 
     public int? DurationSeconds { get; set; }

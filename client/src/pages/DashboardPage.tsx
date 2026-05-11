@@ -28,6 +28,7 @@ import type {
 import type { Song } from '../types/song';
 import { BandAccountManagementPage } from './BandAccountManagementPage';
 import { CeremonyModePage } from './CeremonyModePage';
+import { MusicBrainzImportComponent } from './MusicBrainzImportComponent';
 import { SetlistEditorPage } from './SetlistEditorPage';
 import { SongManagementPage } from './SongManagementPage';
 
@@ -42,6 +43,8 @@ export function DashboardPage() {
   const [selectedSetlistIdForEdit, setSelectedSetlistIdForEdit] = useState<string | null>(null);
   const [ceremonySetlist, setCeremonySetlist] = useState<SetlistDetails | null>(null);
   const [songManagementOpen, setSongManagementOpen] = useState(false);
+  const [musicBrainzImportOpen, setMusicBrainzImportOpen] = useState(false);
+  const [musicBrainzOpenedFromSongManagement, setMusicBrainzOpenedFromSongManagement] = useState(false);
   const [bandAccountOpen, setBandAccountOpen] = useState(false);
 
   const [initialLoading, setInitialLoading] = useState(true);
@@ -69,6 +72,7 @@ export function DashboardPage() {
     setCeremonySetlist(null);
     setSelectedSetlistIdForEdit(null);
     setSongManagementOpen(false);
+    setMusicBrainzImportOpen(false);
     setBandAccountOpen(false);
     setSelectedSetlistId(null);
     setSongs([]);
@@ -143,6 +147,25 @@ export function DashboardPage() {
   const handleBackFromSongManagement = () => {
     setSongManagementOpen(false);
     // Refresh song count
+    if (selectedBand) {
+      Promise.all([getSongs(selectedBand.id), getSetlists(selectedBand.id)])
+        .then(([songsData, setlistsData]) => {
+          setSongs(songsData);
+          setSetlists(setlistsData);
+        })
+        .catch(() => {});
+    }
+  };
+
+  const handleBackFromMusicBrainzImport = () => {
+    setMusicBrainzImportOpen(false);
+
+    if (musicBrainzOpenedFromSongManagement) {
+      setSongManagementOpen(true);
+      setMusicBrainzOpenedFromSongManagement(false);
+      return;
+    }
+
     if (selectedBand) {
       Promise.all([getSongs(selectedBand.id), getSetlists(selectedBand.id)])
         .then(([songsData, setlistsData]) => {
@@ -232,7 +255,23 @@ export function DashboardPage() {
       <SongManagementPage
         bandId={selectedBand.id}
         bandName={selectedBand.name}
+        onImportFromMusicBrainz={() => {
+          setSongManagementOpen(false);
+          setMusicBrainzOpenedFromSongManagement(true);
+          setMusicBrainzImportOpen(true);
+        }}
         onBack={handleBackFromSongManagement}
+      />
+    );
+  }
+
+  if (musicBrainzImportOpen && selectedBand) {
+    return (
+      <MusicBrainzImportComponent
+        bandId={selectedBand.id}
+        bandName={selectedBand.name}
+        userId={user?.userId}
+        onBack={handleBackFromMusicBrainzImport}
       />
     );
   }
@@ -414,7 +453,6 @@ export function DashboardPage() {
                 <div className="flex min-h-0 flex-1 overflow-hidden">
                   <SetlistsPanel
                     setlists={setlists}
-                    selectedSetlistId={selectedSetlistId}
                     isLoading={setlistsLoading}
                     panelMessage={setlistsPanelMessage}
                     onCreateSetlist={handleCreateSetlist}

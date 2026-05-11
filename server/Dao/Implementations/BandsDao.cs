@@ -22,6 +22,8 @@ public class BandsDao : IBandsDao
             Id = r.BandId,
             Name = r.Name,
             Description = r.Description,
+            Country = r.Country,
+            MusicBrainzArtistId = r.MusicBrainzArtistId,
             CreatedByUserId = r.CreatedByUserId,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt
@@ -38,6 +40,8 @@ public class BandsDao : IBandsDao
             Id = r.BandId,
             Name = r.Name,
             Description = r.Description,
+            Country = r.Country,
+            MusicBrainzArtistId = r.MusicBrainzArtistId,
             CreatedByUserId = r.CreatedByUserId,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt
@@ -53,6 +57,8 @@ public class BandsDao : IBandsDao
             Id = r.BandId,
             Name = r.Name,
             Description = r.Description,
+            Country = r.Country,
+            MusicBrainzArtistId = r.MusicBrainzArtistId,
             CreatedByUserId = r.CreatedByUserId,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt
@@ -88,6 +94,8 @@ public class BandsDao : IBandsDao
             Id = band.BandId,
             Name = band.Name,
             Description = band.Description,
+            Country = band.Country,
+            MusicBrainzArtistId = band.MusicBrainzArtistId,
             CreatedByUserId = band.CreatedByUserId,
             CreatedAt = band.CreatedAt,
             UpdatedAt = band.UpdatedAt
@@ -108,6 +116,8 @@ public class BandsDao : IBandsDao
             Id = band.BandId,
             Name = band.Name,
             Description = band.Description,
+            Country = band.Country,
+            MusicBrainzArtistId = band.MusicBrainzArtistId,
             CreatedByUserId = band.CreatedByUserId,
             CreatedAt = band.CreatedAt,
             UpdatedAt = band.UpdatedAt

@@ -16,7 +16,6 @@ function formatDuration(seconds: number): string {
 
 interface SetlistCardProps {
   setlist: SetlistSummary;
-  isSelected: boolean;
   isExpanded: boolean;
   onSelect: (id: string) => void;
   onEdit: (setlist: SetlistSummary) => void;
@@ -27,7 +26,6 @@ interface SetlistCardProps {
 
 export function SetlistCard({
   setlist,
-  isSelected,
   isExpanded,
   onSelect,
   onEdit,

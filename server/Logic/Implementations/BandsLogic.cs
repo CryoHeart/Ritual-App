@@ -80,7 +80,9 @@ public class BandsLogic : IBandsLogic
         {
             Id = band.Id,
             Name = band.Name,
-            Description = band.Description
+            Description = band.Description,
+            Country = band.Country,
+            MusicBrainzArtistId = band.MusicBrainzArtistId
         };
     }
 }

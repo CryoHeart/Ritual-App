@@ -8,6 +8,10 @@ public class BandEntity
 
     public string? Description { get; set; }
 
+    public string? Country { get; set; }
+
+    public string? MusicBrainzArtistId { get; set; }
+
     public string CreatedByUserId { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }

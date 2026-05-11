@@ -202,6 +202,7 @@ public class SongsLogic : ISongsLogic
             SongId = song.Id,
             BandId = song.BandId,
             Title = song.Title,
+            MusicBrainzRecordingId = song.MusicBrainzRecordingId,
             Bpm = song.Bpm,
             DurationSeconds = song.DurationSeconds,
             AlbumId = song.AlbumId,

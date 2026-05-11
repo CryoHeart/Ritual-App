@@ -42,6 +42,8 @@ public class RitualDbContext : DbContext
             entity.Property(e => e.BandId).HasColumnName("band_id");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Country).HasColumnName("country");
+            entity.Property(e => e.MusicBrainzArtistId).HasColumnName("musicbrainz_artist_id");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
@@ -66,6 +68,7 @@ public class RitualDbContext : DbContext
             entity.Property(e => e.SongId).HasColumnName("song_id");
             entity.Property(e => e.BandId).HasColumnName("band_id");
             entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.MusicBrainzRecordingId).HasColumnName("musicbrainz_recording_id");
             entity.Property(e => e.Bpm).HasColumnName("bpm");
             entity.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");
             entity.Property(e => e.Tuning).HasColumnName("tuning");
@@ -84,6 +87,8 @@ public class RitualDbContext : DbContext
             entity.Property(e => e.AlbumId).HasColumnName("album_id");
             entity.Property(e => e.BandId).HasColumnName("band_id");
             entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.MusicBrainzReleaseGroupId).HasColumnName("musicbrainz_release_group_id");
+            entity.Property(e => e.MusicBrainzReleaseId).HasColumnName("musicbrainz_release_id");
             entity.Property(e => e.ReleaseYear).HasColumnName("release_year");
             entity.Property(e => e.SortOrder).HasColumnName("sort_order");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");

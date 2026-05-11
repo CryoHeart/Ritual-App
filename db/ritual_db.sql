@@ -26,12 +26,16 @@ CREATE TABLE `albums` (
   `album_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `band_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `title` varchar(150) NOT NULL,
+  `musicbrainz_release_group_id` varchar(36) DEFAULT NULL,
+  `musicbrainz_release_id` varchar(36) DEFAULT NULL,
   `release_year` int DEFAULT NULL,
   `sort_order` int NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`album_id`),
   KEY `idx_albums_band_id` (`band_id`),
+  UNIQUE KEY `uq_albums_band_release_group` (`band_id`,`musicbrainz_release_group_id`),
+  KEY `idx_albums_band_title` (`band_id`,`title`),
   CONSTRAINT `fk_albums_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`band_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -70,10 +74,13 @@ CREATE TABLE `bands` (
   `band_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `name` varchar(100) NOT NULL,
   `description` varchar(500) DEFAULT NULL,
+  `country` varchar(100) DEFAULT NULL,
+  `musicbrainz_artist_id` varchar(36) DEFAULT NULL,
   `created_by_user_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`band_id`),
+  UNIQUE KEY `uq_bands_musicbrainz_artist_id` (`musicbrainz_artist_id`),
   KEY `idx_bands_created_by_user_id` (`created_by_user_id`),
   CONSTRAINT `fk_bands_created_by_user` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -177,6 +184,7 @@ CREATE TABLE `songs` (
   `song_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `band_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   `title` varchar(150) NOT NULL,
+  `musicbrainz_recording_id` varchar(36) DEFAULT NULL,
   `bpm` int DEFAULT NULL,
   `duration_seconds` int DEFAULT NULL,
   `tuning` varchar(50) DEFAULT NULL,
@@ -188,6 +196,8 @@ CREATE TABLE `songs` (
   `album_track_number` int DEFAULT NULL,
   PRIMARY KEY (`song_id`),
   KEY `idx_songs_band_id` (`band_id`),
+  UNIQUE KEY `uq_songs_band_recording` (`band_id`,`musicbrainz_recording_id`),
+  KEY `idx_songs_band_title` (`band_id`,`title`),
   KEY `idx_songs_album_id` (`album_id`),
   CONSTRAINT `fk_songs_album` FOREIGN KEY (`album_id`) REFERENCES `albums` (`album_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_songs_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`band_id`) ON DELETE CASCADE

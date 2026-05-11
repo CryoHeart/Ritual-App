@@ -2,6 +2,7 @@ export interface AlbumSong {
   songId: string;
   bandId: string;
   title: string;
+  musicBrainzRecordingId?: string;
   bpm?: number;
   durationSeconds?: number;
   albumId?: string | null;
@@ -16,6 +17,8 @@ export interface Album {
   albumId: string | null;
   bandId: string;
   title: string;
+  musicBrainzReleaseGroupId?: string;
+  musicBrainzReleaseId?: string;
   releaseYear?: number;
   sortOrder: number;
   createdAt?: string;

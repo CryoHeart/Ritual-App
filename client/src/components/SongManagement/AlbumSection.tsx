@@ -7,11 +7,12 @@ interface Props {
   searchQuery: string;
   onEditAlbum?: () => void;
   onDeleteAlbum?: () => void;
+  onDeleteAllSongs?: () => void;
   onEditSong: (songId: string) => void;
   onDeleteSong: (songId: string) => void;
 }
 
-export function AlbumSection({ album, searchQuery, onEditAlbum, onDeleteAlbum, onEditSong, onDeleteSong }: Props) {
+export function AlbumSection({ album, searchQuery, onEditAlbum, onDeleteAlbum, onDeleteAllSongs, onEditSong, onDeleteSong }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   const isUnassigned = album.albumId === null;
@@ -61,6 +62,15 @@ export function AlbumSection({ album, searchQuery, onEditAlbum, onDeleteAlbum, o
               </button>
             )}
           </div>
+        )}
+
+        {isUnassigned && onDeleteAllSongs && album.songs.length > 0 && (
+          <button
+            onClick={onDeleteAllSongs}
+            className="shrink-0 rounded border border-red-900/60 bg-red-950/30 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-red-400 transition-all hover:border-red-600 hover:text-red-200"
+          >
+            Delete all
+          </button>
         )}
       </div>
 
