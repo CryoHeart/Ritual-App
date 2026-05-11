@@ -1,20 +1,41 @@
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 using server.Dao.Implementations;
 using server.Dao.Interfaces;
 using server.Data;
 using server.Logic.Implementations;
 using server.Logic.Interfaces;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:5000");
+
+var envPath = Path.Combine(builder.Environment.ContentRootPath, ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
 
 // Add services to the container.
 
 const string RitualClientCors = "RitualClientCors";
 
+DatabaseSettings dbSettings;
+string connectionString;
+try
+{
+    dbSettings = GetDatabaseSettings();
+    connectionString = BuildConnectionString(dbSettings);
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"[DB CONFIG ERROR] {ex.Message}");
+    throw;
+}
+
 builder.Services.AddDbContext<RitualDbContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("RitualDb"),
+        connectionString,
         new MySqlServerVersion(new Version(8, 0, 0))
     )
 );
@@ -60,6 +81,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+await ValidateDatabaseConnectionAsync(app, dbSettings);
 await EnsureMusicBrainzSchemaAsync(app);
 
 // Configure the HTTP request pipeline.
@@ -76,6 +98,111 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string BuildConnectionString(DatabaseSettings settings)
+{
+    var builder = new MySqlConnectionStringBuilder
+    {
+        Server = settings.Host,
+        Port = (uint)settings.Port,
+        UserID = settings.User,
+        Password = settings.Password,
+        Database = settings.Name,
+        GuidFormat = MySqlGuidFormat.None,
+        SslMode = settings.SslEnabled ? MySqlSslMode.Required : MySqlSslMode.None
+    };
+
+    return builder.ConnectionString;
+}
+
+static DatabaseSettings GetDatabaseSettings()
+{
+    var host = RequireEnv("DB_HOST");
+    var user = RequireEnv("DB_USER");
+    var password = RequireEnv("DB_PASSWORD");
+    var name = RequireEnv("DB_NAME");
+    var portRaw = RequireEnv("DB_PORT");
+    var sslRaw = RequireEnv("DB_SSL");
+
+    if (!int.TryParse(portRaw, out var port) || port <= 0 || port > 65535)
+    {
+        throw new InvalidOperationException("DB_PORT must be a valid port number.");
+    }
+
+    if (!TryParseBool(sslRaw, out var sslEnabled))
+    {
+        throw new InvalidOperationException("DB_SSL must be true or false.");
+    }
+
+    return new DatabaseSettings(host, port, user, password, name, sslEnabled);
+}
+
+static async Task ValidateDatabaseConnectionAsync(WebApplication app, DatabaseSettings settings)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
+    var db = scope.ServiceProvider.GetRequiredService<RitualDbContext>();
+
+    try
+    {
+        await db.Database.OpenConnectionAsync();
+        await db.Database.CloseConnectionAsync();
+        logger.LogInformation(
+            "Database connection established to {DbHost}:{DbPort}/{DbName} (SSL: {DbSsl}).",
+            settings.Host,
+            settings.Port,
+            settings.Name,
+            settings.SslEnabled
+        );
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(
+            ex,
+            "Database connection failed to {DbHost}:{DbPort}/{DbName}. Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL.",
+            settings.Host,
+            settings.Port,
+            settings.Name
+        );
+        throw;
+    }
+}
+
+static string RequireEnv(string key)
+{
+    var value = Environment.GetEnvironmentVariable(key);
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        throw new InvalidOperationException($"Missing required environment variable: {key}");
+    }
+
+    return value;
+}
+
+static bool TryParseBool(string value, out bool result)
+{
+    if (bool.TryParse(value, out result))
+    {
+        return true;
+    }
+
+    switch (value.Trim().ToLowerInvariant())
+    {
+        case "1":
+        case "yes":
+        case "y":
+            result = true;
+            return true;
+        case "0":
+        case "no":
+        case "n":
+            result = false;
+            return true;
+        default:
+            result = false;
+            return false;
+    }
+}
 
 static async Task EnsureMusicBrainzSchemaAsync(WebApplication app)
 {

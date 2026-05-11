@@ -100,7 +100,7 @@ Full interactive API docs available via Swagger UI at `http://localhost:5000/swa
 
 ### Database Setup
 
-1. Create the database schema:
+1. Create the database schema (local MySQL only — skip if using a hosted provider such as Aiven):
    ```sql
    -- Run the base schema
    SOURCE db/ritual_db.sql;
@@ -111,14 +111,23 @@ Full interactive API docs available via Swagger UI at `http://localhost:5000/swa
    SOURCE migrations/003_seed_wolfs_cry_album.sql;
    ```
 
-2. Configure the connection string in `server/appsettings.Development.json`:
-   ```json
-   {
-     "ConnectionStrings": {
-       "RitualDb": "server=localhost;port=3306;database=ritual_db;user=YOUR_USER;password=YOUR_PASSWORD;GuidFormat=None;"
-     }
-   }
+2. Configure the database connection via environment variables.
+   Copy `server/.env.example` to `server/.env` and fill in your values:
    ```
+   cp server/.env.example server/.env
+   ```
+   Then edit `server/.env`:
+   ```env
+   DB_HOST=your-mysql-host
+   DB_PORT=3306
+   DB_USER=your_user
+   DB_PASSWORD=your_password
+   DB_NAME=ritual
+   DB_SSL=false
+   ```
+   For hosted databases such as [Aiven](https://aiven.io/), set `DB_SSL=true` and use the provided host and port.
+
+   > **Never commit `server/.env`** — it is listed in `.gitignore` and must remain local only.
 
 ### Running the Backend
 

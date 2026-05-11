@@ -553,7 +553,12 @@ export function MusicBrainzImportComponent({ bandId, bandName, userId, onBack }:
 
           <RitualCard padded={false} className="flex min-h-0 flex-col overflow-hidden">
             <div className="shrink-0 border-b border-zinc-800 px-4 py-3">
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-zinc-200">Track preview and import</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-black uppercase tracking-[0.2em] text-zinc-200">Track preview</p>
+                <RitualButton variant="primary" disabled={!canImport} onClick={importSelected}>
+                  {importLoading ? 'Importing...' : 'Import selected'}
+                </RitualButton>
+              </div>
               <p className="mt-1 text-xs text-zinc-500">Choose tracks per album, or leave all selected for full album import.</p>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
@@ -603,13 +608,10 @@ export function MusicBrainzImportComponent({ bandId, bandName, userId, onBack }:
                 </div>
               ) : null}
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-zinc-800 pt-3">
                 <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
                   Selected albums: {selectedAlbumCount} | Selected songs: {selectedTrackCount}
                 </p>
-                <RitualButton variant="primary" disabled={!canImport} onClick={importSelected}>
-                  {importLoading ? 'Importing...' : 'Import selected'}
-                </RitualButton>
               </div>
             </div>
           </RitualCard>
