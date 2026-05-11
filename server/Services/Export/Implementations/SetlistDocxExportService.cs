@@ -20,17 +20,14 @@ public class SetlistDocxExportService : ISetlistDocxExportService
             AddStyles(mainPart);
             AddPageMargins(body);
 
-            // Title heading
-            body.AppendChild(CreateHeading("RITUAL — Setlist Export", 1));
+            body.AppendChild(CreateHeading("RITUAL", 1));
+            body.AppendChild(CreateHeading(data.SetlistName, 2));
+            body.AppendChild(CreateMetaLine(data.BandName));
 
-            // Metadata block
-            body.AppendChild(CreateMetaParagraph("Band", data.BandName));
-            body.AppendChild(CreateMetaParagraph("Setlist", data.SetlistName));
             if (!string.IsNullOrWhiteSpace(data.SetlistDescription))
-                body.AppendChild(CreateMetaParagraph("Description", data.SetlistDescription!));
-            body.AppendChild(CreateMetaParagraph("Total Songs", data.TotalSongs.ToString()));
-            body.AppendChild(CreateMetaParagraph("Total Duration", FormatDuration(data.TotalDurationSeconds)));
-            body.AppendChild(CreateMetaParagraph("Exported", data.ExportedAt.ToString("dd MMM yyyy HH:mm UTC")));
+            {
+                body.AppendChild(CreateMetaLine(data.SetlistDescription!));
+            }
 
             body.AppendChild(new Paragraph(new Run(new Break() { Type = BreakValues.TextWrapping })));
 
@@ -40,32 +37,24 @@ public class SetlistDocxExportService : ISetlistDocxExportService
             }
             else
             {
-                // Track table
-                body.AppendChild(CreateHeading("Track Listing", 2));
-                body.AppendChild(BuildSongTable(data.Songs));
-
-                body.AppendChild(new Paragraph(new Run(new Break() { Type = BreakValues.TextWrapping })));
-
-                // Performance Notes section — only if any song has notes
-                var songsWithNotes = data.Songs.Where(s =>
-                    !string.IsNullOrWhiteSpace(s.Notes)
-                    || !string.IsNullOrWhiteSpace(s.TransitionNotes)
-                    || !string.IsNullOrWhiteSpace(s.PerformanceNotes)).ToList();
-
-                if (songsWithNotes.Count > 0)
+                for (var i = 0; i < data.Songs.Count; i++)
                 {
-                    body.AppendChild(CreateHeading("Performance Notes", 2));
+                    var song = data.Songs[i];
+                    body.AppendChild(CreateHeading($"{i + 1}. {song.Title}", 3));
 
-                    foreach (var song in songsWithNotes)
+                    if (!string.IsNullOrWhiteSpace(song.TransitionNotes))
                     {
-                        body.AppendChild(CreateHeading($"{song.PositionIndex + 1}. {song.Title}", 3));
+                        body.AppendChild(CreateNoteLine($"Transition: {song.TransitionNotes}"));
+                    }
 
-                        if (!string.IsNullOrWhiteSpace(song.TransitionNotes))
-                            body.AppendChild(CreateBulletParagraph("Transition", song.TransitionNotes!));
-                        if (!string.IsNullOrWhiteSpace(song.PerformanceNotes))
-                            body.AppendChild(CreateBulletParagraph("Performance", song.PerformanceNotes!));
-                        if (!string.IsNullOrWhiteSpace(song.Notes))
-                            body.AppendChild(CreateBulletParagraph("Notes", song.Notes!));
+                    if (!string.IsNullOrWhiteSpace(song.PerformanceNotes))
+                    {
+                        body.AppendChild(CreateNoteLine($"Performance: {song.PerformanceNotes}"));
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(song.Notes))
+                    {
+                        body.AppendChild(CreateNoteLine($"Notes: {song.Notes}"));
                     }
                 }
             }
@@ -74,89 +63,6 @@ public class SetlistDocxExportService : ISetlistDocxExportService
         }
 
         return ms.ToArray();
-    }
-
-    private static Table BuildSongTable(List<SetlistExportSong> songs)
-    {
-        var table = new Table();
-
-        // Table properties
-        var tableProps = new TableProperties(
-            new TableBorders(
-                new TopBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
-                new BottomBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
-                new LeftBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
-                new RightBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
-                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" },
-                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4, Color = "CCCCCC" }
-            ),
-            new TableWidth { Width = "9360", Type = TableWidthUnitValues.Dxa }
-        );
-        table.AppendChild(tableProps);
-
-        // Header row
-        var headers = new[] { "#", "Song", "Album", "Duration", "BPM", "Tuning", "Key" };
-        var headerRow = new TableRow();
-        foreach (var h in headers)
-        {
-            headerRow.AppendChild(CreateTableCell(h, bold: true, shading: "1C1C1F", textColor: "A1A1AA", isHeader: true));
-        }
-        table.AppendChild(headerRow);
-
-        // Data rows
-        for (var i = 0; i < songs.Count; i++)
-        {
-            var song = songs[i];
-            var shade = i % 2 == 0 ? "18181B" : "1C1C1F";
-            var dataRow = new TableRow();
-
-            dataRow.AppendChild(CreateTableCell($"{i + 1}", shading: shade, textColor: "71717A"));
-            dataRow.AppendChild(CreateTableCell(song.Title, bold: true, shading: shade, textColor: "F4F4F5"));
-            dataRow.AppendChild(CreateTableCell(song.AlbumTitle ?? "—", shading: shade, textColor: "A1A1AA"));
-            dataRow.AppendChild(CreateTableCell(FormatDuration(song.DurationSeconds), shading: shade, textColor: "A1A1AA"));
-            dataRow.AppendChild(CreateTableCell(song.Bpm.HasValue ? song.Bpm.Value.ToString() : "—", shading: shade, textColor: "A1A1AA"));
-            dataRow.AppendChild(CreateTableCell(song.Tuning ?? "—", shading: shade, textColor: "A1A1AA"));
-            dataRow.AppendChild(CreateTableCell(song.SongKey ?? "—", shading: shade, textColor: "A1A1AA"));
-
-            table.AppendChild(dataRow);
-        }
-
-        return table;
-    }
-
-    private static TableCell CreateTableCell(
-        string text,
-        bool bold = false,
-        string shading = "FFFFFF",
-        string textColor = "000000",
-        bool isHeader = false)
-    {
-        var cell = new TableCell();
-
-        cell.AppendChild(new TableCellProperties(
-            new Shading
-            {
-                Val = ShadingPatternValues.Clear,
-                Fill = shading,
-                Color = "auto"
-            },
-            new TableCellMargin(
-                new TopMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
-                new BottomMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
-                new LeftMargin { Width = "108", Type = TableWidthUnitValues.Dxa },
-                new RightMargin { Width = "108", Type = TableWidthUnitValues.Dxa }
-            )
-        ));
-
-        var run = new Run(new Text(text));
-        var runProps = new RunProperties();
-        if (bold) runProps.AppendChild(new Bold());
-        runProps.AppendChild(new Color { Val = textColor });
-        runProps.AppendChild(new FontSize { Val = isHeader ? "18" : "20" });
-        run.PrependChild(runProps);
-
-        cell.AppendChild(new Paragraph(run));
-        return cell;
     }
 
     private static Paragraph CreateHeading(string text, int level)
@@ -168,55 +74,44 @@ public class SetlistDocxExportService : ISetlistDocxExportService
         return para;
     }
 
-    private static Paragraph CreateMetaParagraph(string label, string value)
+    private static Paragraph CreateMetaLine(string value)
     {
         var para = new Paragraph();
-        var run1 = new Run(new Text($"{label}: "));
-        run1.PrependChild(new RunProperties(new Bold()));
-        var run2 = new Run(new Text(value));
-        para.AppendChild(run1);
-        para.AppendChild(run2);
+        para.AppendChild(new ParagraphProperties(new ParagraphStyleId { Val = "Meta" }));
+        para.AppendChild(new Run(new Text(value)));
         return para;
     }
 
-    private static Paragraph CreateBulletParagraph(string label, string value)
+    private static Paragraph CreateNoteLine(string value)
     {
         var para = new Paragraph();
-        var props = new ParagraphProperties(
-            new ParagraphStyleId { Val = "ListParagraph" },
-            new NumberingProperties(
-                new NumberingLevelReference { Val = 0 },
-                new NumberingId { Val = 1 }
-            )
-        );
-        para.AppendChild(props);
-
-        var run1 = new Run(new Text($"{label}: "));
-        run1.PrependChild(new RunProperties(new Bold()));
-        var run2 = new Run(new Text(value) { Space = SpaceProcessingModeValues.Preserve });
-        para.AppendChild(run1);
-        para.AppendChild(run2);
+        para.AppendChild(new ParagraphProperties(new ParagraphStyleId { Val = "SongNote" }));
+        para.AppendChild(new Run(new Text(value) { Space = SpaceProcessingModeValues.Preserve }));
         return para;
     }
 
     private static Paragraph CreatePlainParagraph(string text)
     {
-        return new Paragraph(new Run(new Text(text)));
+        var para = new Paragraph();
+        para.AppendChild(new ParagraphProperties(new ParagraphStyleId { Val = "SongNote" }));
+        para.AppendChild(new Run(new Text(text)));
+        return para;
     }
 
     private static void AddStyles(MainDocumentPart mainPart)
     {
         var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
         stylesPart.Styles = new Styles(
-            BuildStyle("Normal", "Normal", false, "202020", 20),
-            BuildStyle("Heading1", "Heading 1", true, "DC2626", 28),
-            BuildStyle("Heading2", "Heading 2", true, "F4F4F5", 24),
-            BuildStyle("Heading3", "Heading 3", true, "A1A1AA", 22),
-            BuildStyle("ListParagraph", "List Paragraph", false, "E4E4E7", 20)
+            BuildStyle("Normal", "Normal", false, "000000", 26, "120", "80"),
+            BuildStyle("Heading1", "Heading 1", true, "000000", 44, "0", "140"),
+            BuildStyle("Heading2", "Heading 2", true, "000000", 72, "80", "180"),
+            BuildStyle("Heading3", "Heading 3", true, "000000", 52, "120", "60"),
+            BuildStyle("Meta", "Meta", false, "333333", 26, "20", "20"),
+            BuildStyle("SongNote", "Song Note", false, "333333", 24, "20", "80")
         );
     }
 
-    private static Style BuildStyle(string styleId, string name, bool bold, string color, int size)
+    private static Style BuildStyle(string styleId, string name, bool bold, string color, int size, string before, string after)
     {
         var style = new Style
         {
@@ -231,12 +126,9 @@ public class SetlistDocxExportService : ISetlistDocxExportService
         runProps.AppendChild(new FontSize { Val = size.ToString() });
         style.AppendChild(runProps);
 
-        if (styleId.StartsWith("Heading"))
-        {
-            style.AppendChild(new StyleParagraphProperties(
-                new SpacingBetweenLines { Before = "240", After = "80" }
-            ));
-        }
+        style.AppendChild(new StyleParagraphProperties(
+            new SpacingBetweenLines { Before = before, After = after }
+        ));
 
         return style;
     }
@@ -253,15 +145,5 @@ public class SetlistDocxExportService : ISetlistDocxExportService
             }
         );
         body.AppendChild(sectProps);
-    }
-
-    private static string FormatDuration(int? seconds)
-    {
-        if (!seconds.HasValue || seconds.Value <= 0) return "—";
-        var h = seconds.Value / 3600;
-        var m = (seconds.Value % 3600) / 60;
-        var s = seconds.Value % 60;
-        if (h > 0) return $"{h}:{m:D2}:{s:D2}";
-        return $"{m}:{s:D2}";
     }
 }
