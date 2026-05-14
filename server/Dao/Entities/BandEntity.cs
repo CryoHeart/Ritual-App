@@ -17,4 +17,7 @@ public class BandEntity
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>The requesting user's role in this band. Populated only when querying by userId.</summary>
+    public string? UserRole { get; set; }
 }

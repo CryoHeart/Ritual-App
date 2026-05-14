@@ -20,6 +20,7 @@ interface SetlistCardProps {
   bandId: string;
   setlist: SetlistSummary;
   isExpanded: boolean;
+  canEdit?: boolean;
   onSelect: (id: string) => void;
   onEdit: (setlist: SetlistSummary) => void;
   onDelete: (setlist: SetlistSummary) => void;
@@ -31,6 +32,7 @@ export function SetlistCard({
   bandId,
   setlist,
   isExpanded,
+  canEdit = true,
   onSelect,
   onEdit,
   onDelete,
@@ -80,16 +82,22 @@ export function SetlistCard({
 
       {isExpanded && (
         <div className="mt-3" onClick={e => e.stopPropagation()}>
-          <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-            <RitualButton variant="ghost" size="sm" onClick={() => onEdit(setlist)}>
-              Edit
-            </RitualButton>
-            <RitualButton variant="danger" size="sm" onClick={() => onDelete(setlist)}>
-              Delete
-            </RitualButton>
-            <RitualButton variant="neutral" size="sm" onClick={() => onOpenEditor(setlist.setlistId)}>
-              Open Editor
-            </RitualButton>
+          <div className={`grid gap-2 ${canEdit ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1'}`}>
+            {canEdit && (
+              <RitualButton variant="ghost" size="sm" onClick={() => onEdit(setlist)}>
+                Edit
+              </RitualButton>
+            )}
+            {canEdit && (
+              <RitualButton variant="danger" size="sm" onClick={() => onDelete(setlist)}>
+                Delete
+              </RitualButton>
+            )}
+            {canEdit && (
+              <RitualButton variant="neutral" size="sm" onClick={() => onOpenEditor(setlist.setlistId)}>
+                Open Editor
+              </RitualButton>
+            )}
             <RitualButton
               variant="primary"
               size="sm"

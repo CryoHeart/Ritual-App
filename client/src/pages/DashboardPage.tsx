@@ -8,6 +8,7 @@ import {
   getSetlists,
   updateSetlist
 } from '../api/setlistsApi';
+import { startLiveSession } from '../api/liveSessionsApi';
 import { AppShell } from '../components/AppShell';
 import { SetlistsPanel } from '../components/Setlists/SetlistsPanel';
 import { SongList } from '../components/SongList';
@@ -16,9 +17,11 @@ import { RitualBadge } from '../components/ui/RitualBadge';
 import { RitualButton } from '../components/ui/RitualButton';
 import { RitualCard } from '../components/ui/RitualCard';
 import { SectionTitle } from '../components/ui/SectionTitle';
+import OngoingRitualPanel from '../components/OngoingRitualPanel';
 import loginBackground from '../assets/login-background.png';
 import { useAuth } from '../context/AuthContext';
 import type { Band } from '../types/band';
+import { isRitualLeader } from '../types/band';
 import type {
   CreateSetlistRequest,
   SetlistDetails,
@@ -28,6 +31,8 @@ import type {
 import type { Song } from '../types/song';
 import { BandAccountManagementPage } from './BandAccountManagementPage';
 import { CeremonyModePage } from './CeremonyModePage';
+import LiveRitualPage from './LiveRitualPage';
+import BandMemberManagementPage from './BandMemberManagementPage';
 import { MusicBrainzImportComponent } from './MusicBrainzImportComponent';
 import { SetlistEditorPage } from './SetlistEditorPage';
 import { SongManagementPage } from './SongManagementPage';
@@ -46,6 +51,8 @@ export function DashboardPage() {
   const [musicBrainzImportOpen, setMusicBrainzImportOpen] = useState(false);
   const [musicBrainzOpenedFromSongManagement, setMusicBrainzOpenedFromSongManagement] = useState(false);
   const [bandAccountOpen, setBandAccountOpen] = useState(false);
+  const [bandMemberManagementOpen, setBandMemberManagementOpen] = useState(false);
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [bandLoading, setBandLoading] = useState(false);
@@ -114,14 +121,28 @@ export function DashboardPage() {
       return;
     }
 
-    setSetlistsLoading(true);
-    try {
-      const details = await getSetlistDetails(selectedBand.id, setlistId);
-      setCeremonySetlist(details);
-    } catch (e) {
-      setSetlistsPanelMessage(e instanceof Error ? e.message : 'Failed to load setlist for ceremony.');
-    } finally {
-      setSetlistsLoading(false);
+    if (isRitualLeader(selectedBand)) {
+      // Start live session via backend
+      setSetlistsLoading(true);
+      try {
+        const session = await startLiveSession(selectedBand.id, setlistId);
+        setLiveSessionId(session.liveSessionId);
+      } catch (e) {
+        setSetlistsPanelMessage(e instanceof Error ? e.message : 'Failed to start live session.');
+      } finally {
+        setSetlistsLoading(false);
+      }
+    } else {
+      // Fallback: local ceremony mode for non-leaders
+      setSetlistsLoading(true);
+      try {
+        const details = await getSetlistDetails(selectedBand.id, setlistId);
+        setCeremonySetlist(details);
+      } catch (e) {
+        setSetlistsPanelMessage(e instanceof Error ? e.message : 'Failed to load setlist for ceremony.');
+      } finally {
+        setSetlistsLoading(false);
+      }
     }
   };
 
@@ -287,6 +308,29 @@ export function DashboardPage() {
     );
   }
 
+  if (bandMemberManagementOpen && selectedBand) {
+    return (
+      <div>
+        <div className="p-4">
+          <button onClick={() => setBandMemberManagementOpen(false)} className="text-sm text-gray-400 hover:text-white">
+            ← Back to Dashboard
+          </button>
+        </div>
+        <BandMemberManagementPage bandId={selectedBand.id} bandName={selectedBand.name} />
+      </div>
+    );
+  }
+
+  if (liveSessionId && selectedBand) {
+    return (
+      <LiveRitualPage
+        bandId={selectedBand.id}
+        liveSessionId={liveSessionId}
+        onExit={() => setLiveSessionId(null)}
+      />
+    );
+  }
+
   if (ceremonySetlist) {
     return (
       <CeremonyModePage
@@ -396,13 +440,15 @@ export function DashboardPage() {
 
               {selectedBand && (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <RitualButton
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => setSongManagementOpen(true)}
-                  >
-                    Manage songs and albums
-                  </RitualButton>
+                  {isRitualLeader(selectedBand) && (
+                    <RitualButton
+                      variant="primary"
+                      className="w-full"
+                      onClick={() => setSongManagementOpen(true)}
+                    >
+                      Manage songs and albums
+                    </RitualButton>
+                  )}
                   <RitualButton
                     variant="neutral"
                     className="w-full"
@@ -410,11 +456,27 @@ export function DashboardPage() {
                   >
                     Band account management
                   </RitualButton>
+                  {isRitualLeader(selectedBand) && (
+                    <RitualButton
+                      variant="neutral"
+                      className="w-full"
+                      onClick={() => setBandMemberManagementOpen(true)}
+                    >
+                      Manage band members
+                    </RitualButton>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </RitualCard>
+
+        {selectedBand && (
+          <OngoingRitualPanel
+            bandId={selectedBand.id}
+            onEnterLiveMode={(sessionId) => setLiveSessionId(sessionId)}
+          />
+        )}
 
         {bandLoading ? (
           <RitualCard className="py-16 text-center">
@@ -456,6 +518,7 @@ export function DashboardPage() {
                     setlists={setlists}
                     isLoading={setlistsLoading}
                     panelMessage={setlistsPanelMessage}
+                    canEdit={isRitualLeader(selectedBand)}
                     onCreateSetlist={handleCreateSetlist}
                     onUpdateSetlist={handleUpdateSetlist}
                     onDeleteSetlist={handleDeleteSetlist}

@@ -14,6 +14,7 @@ interface SetlistsPanelProps {
   setlists: SetlistSummary[];
   isLoading: boolean;
   panelMessage?: string | null;
+  canEdit?: boolean;
   onCreateSetlist: (payload: CreateSetlistRequest) => Promise<void>;
   onUpdateSetlist: (setlistId: string, payload: UpdateSetlistRequest) => Promise<void>;
   onDeleteSetlist: (setlistId: string) => Promise<void>;
@@ -26,6 +27,7 @@ export function SetlistsPanel({
   setlists,
   isLoading,
   panelMessage,
+  canEdit = true,
   onCreateSetlist,
   onUpdateSetlist,
   onDeleteSetlist,
@@ -106,11 +108,13 @@ export function SetlistsPanel({
   return (
     <>
       <div className="flex h-full min-h-0 w-full flex-col">
-        <div className="border-b border-zinc-800/70 px-5 py-4">
-          <RitualButton variant="primary" size="sm" className="w-full" onClick={openCreateModal}>
-            New Ritual
-          </RitualButton>
-        </div>
+        {canEdit && (
+          <div className="border-b border-zinc-800/70 px-5 py-4">
+            <RitualButton variant="primary" size="sm" className="w-full" onClick={openCreateModal}>
+              New Ritual
+            </RitualButton>
+          </div>
+        )}
 
         {panelMessage && (
           <div className="border-b border-red-900/45 bg-red-950/20 px-5 py-3 text-xs text-red-300">
@@ -131,6 +135,7 @@ export function SetlistsPanel({
                   bandId={bandId}
                   setlist={setlist}
                   isExpanded={expandedId === setlist.setlistId}
+                  canEdit={canEdit}
                   onSelect={id => setExpandedId(prev => (prev === id ? null : id))}
                   onEdit={openEditModal}
                   onDelete={setPendingDelete}

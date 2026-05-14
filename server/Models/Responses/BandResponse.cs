@@ -11,4 +11,7 @@ public class BandResponse
     public string? Country { get; set; }
 
     public string? MusicBrainzArtistId { get; set; }
+
+    /// <summary>The authenticated user's role in this band. Null when queried without user context.</summary>
+    public string? Role { get; set; }
 }

@@ -13,4 +13,12 @@ public interface IBandsDao
     Task<BandEntity> CreateAsync(string name, string createdByUserId);
 
     Task<BandEntity?> UpdateNameAsync(string bandId, string name);
+
+    Task<string?> GetUserRoleInBandAsync(string userId, string bandId);
+
+    Task<IReadOnlyCollection<(string BandMemberId, string UserId, string DisplayName, string Email, string Role, string? Instrument, DateTime JoinedAt)>> GetMembersAsync(string bandId);
+
+    Task AddMemberAsync(string bandId, string userId, string role, string? instrument);
+
+    Task<bool> IsMemberAsync(string userId, string bandId);
 }

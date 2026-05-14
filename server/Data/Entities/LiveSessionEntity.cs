@@ -8,6 +8,8 @@ public class LiveSessionEntity
 
     public string SetlistId { get; set; } = string.Empty;
 
+    public string? StartedByUserId { get; set; }
+
     public string Status { get; set; } = string.Empty;
 
     public int CurrentPositionIndex { get; set; }

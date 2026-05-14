@@ -19,32 +19,60 @@ public class LiveSessionsDao : ILiveSessionsDao
         Id = r.LiveSessionId,
         BandId = r.BandId,
         SetlistId = r.SetlistId,
+        StartedByUserId = r.StartedByUserId,
         Status = r.Status,
         CurrentSongIndex = r.CurrentPositionIndex,
         StartedAt = r.StartedAt,
         EndedAt = r.EndedAt
     };
 
-    public async Task<LiveSessionEntity> CreateAsync(string bandId, string setlistId)
+    public async Task<LiveSessionEntity> CreateAsync(string bandId, string setlistId, string startedByUserId)
     {
         var r = new server.Data.Entities.LiveSessionEntity
         {
             LiveSessionId = Guid.NewGuid().ToString(),
             BandId = bandId,
             SetlistId = setlistId,
+            StartedByUserId = startedByUserId,
             Status = "active",
             CurrentPositionIndex = 0,
             StartedAt = DateTime.UtcNow
         };
         _db.LiveSessions.Add(r);
         await _db.SaveChangesAsync();
-        return Map(r);
+        var entity = Map(r);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == startedByUserId);
+        entity.StartedByDisplayName = user?.DisplayName;
+        return entity;
     }
 
     public async Task<LiveSessionEntity?> GetByIdAsync(string sessionId)
     {
         var r = await _db.LiveSessions.FirstOrDefaultAsync(s => s.LiveSessionId == sessionId);
-        return r == null ? null : Map(r);
+        if (r == null) return null;
+        var entity = Map(r);
+        if (r.StartedByUserId != null)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == r.StartedByUserId);
+            entity.StartedByDisplayName = user?.DisplayName;
+        }
+        return entity;
+    }
+
+    public async Task<LiveSessionEntity?> GetActiveByBandIdAsync(string bandId)
+    {
+        var r = await _db.LiveSessions
+            .Where(s => s.BandId == bandId && s.Status == "active")
+            .OrderByDescending(s => s.StartedAt)
+            .FirstOrDefaultAsync();
+        if (r == null) return null;
+        var entity = Map(r);
+        if (r.StartedByUserId != null)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == r.StartedByUserId);
+            entity.StartedByDisplayName = user?.DisplayName;
+        }
+        return entity;
     }
 
     public async Task UpdateAsync(LiveSessionEntity session)

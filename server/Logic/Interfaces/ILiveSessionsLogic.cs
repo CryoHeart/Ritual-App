@@ -1,17 +1,18 @@
-using server.Models.Requests;
 using server.Models.Responses;
 
 namespace server.Logic.Interfaces;
 
 public interface ILiveSessionsLogic
 {
-    Task<LiveSessionResponse> StartSessionAsync(string bandId, string setlistId, StartLiveSessionRequest request);
+    Task<LiveSessionResponse> StartSessionAsync(string userId, string bandId, string setlistId);
 
-    Task<LiveSessionResponse> GetSessionAsync(string bandId, string sessionId);
+    Task<LiveSessionResponse?> GetActiveSessionAsync(string userId, string bandId);
 
-    Task<LiveSessionResponse> NextSongAsync(string bandId, string sessionId);
+    Task<LiveSessionResponse> GetSessionAsync(string userId, string bandId, string sessionId);
 
-    Task<LiveSessionResponse> PreviousSongAsync(string bandId, string sessionId);
+    Task<LiveSessionResponse> NextSongAsync(string userId, string bandId, string sessionId);
 
-    Task<LiveSessionResponse> EndSessionAsync(string bandId, string sessionId);
+    Task<LiveSessionResponse> PreviousSongAsync(string userId, string bandId, string sessionId);
+
+    Task<LiveSessionResponse> EndSessionAsync(string userId, string bandId, string sessionId);
 }

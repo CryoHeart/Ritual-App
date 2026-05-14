@@ -1,10 +1,15 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MySqlConnector;
 using server.Dao.Implementations;
 using server.Dao.Interfaces;
 using server.Data;
+using server.Hubs;
 using server.Logic.Implementations;
 using server.Logic.Interfaces;
+using server.Services;
 using server.Services.Export.Implementations;
 using server.Services.Export.Interfaces;
 using DotNetEnv;
@@ -43,6 +48,45 @@ builder.Services.AddDbContext<RitualDbContext>(options =>
 );
 
 builder.Services.AddControllers();
+
+// ── JWT Auth ──────────────────────────────────────────────────────────────────
+var jwtSecret = RequireEnv("JWT_SECRET");
+builder.Configuration["Jwt:Secret"]   = jwtSecret;
+builder.Configuration["Jwt:Issuer"]   = "ritual";
+builder.Configuration["Jwt:Audience"] = "ritual-client";
+
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer              = "ritual",
+            ValidAudience            = "ritual-client",
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+        // Allow SignalR hub to receive JWT from query string
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+
 builder.Services.AddScoped<IHealthLogic, HealthLogic>();
 builder.Services.AddScoped<IHealthDao, HealthDao>();
 builder.Services.AddScoped<IBandsLogic, BandsLogic>();
@@ -59,10 +103,13 @@ builder.Services.AddScoped<ISetlistsDao, SetlistsDao>();
 builder.Services.AddScoped<IAlbumsDao, AlbumsDao>();
 builder.Services.AddScoped<ILiveSessionsDao, LiveSessionsDao>();
 builder.Services.AddScoped<ISetlistExportDao, SetlistExportDao>();
+builder.Services.AddScoped<IPermissionsDao, PermissionsDao>();
+builder.Services.AddScoped<IPermissionsLogic, PermissionsLogic>();
 builder.Services.AddScoped<ISetlistExportLogic, SetlistExportLogic>();
 builder.Services.AddSingleton<ISetlistPdfExportService, SetlistPdfExportService>();
 builder.Services.AddSingleton<ISetlistDocxExportService, SetlistDocxExportService>();
 builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 builder.Services
     .AddHttpClient<IMusicBrainzClient, MusicBrainzClient>(client =>
     {
@@ -78,7 +125,8 @@ builder.Services.AddCors(options =>
             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
             uri.IsLoopback)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();   // required for SignalR
     });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -89,6 +137,7 @@ var app = builder.Build();
 
 await ValidateDatabaseConnectionAsync(app, dbSettings);
 await EnsureMusicBrainzSchemaAsync(app);
+await EnsureLiveSessionsSchemaAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -99,9 +148,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(RitualClientCors);
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<LiveRitualHub>("/hubs/live-ritual");
 
 app.Run();
 
@@ -115,7 +166,8 @@ static string BuildConnectionString(DatabaseSettings settings)
         Password = settings.Password,
         Database = settings.Name,
         GuidFormat = MySqlGuidFormat.None,
-        SslMode = settings.SslEnabled ? MySqlSslMode.Required : MySqlSslMode.None
+        SslMode = settings.SslEnabled ? MySqlSslMode.Required : MySqlSslMode.None,
+        AllowPublicKeyRetrieval = !settings.SslEnabled
     };
 
     return builder.ConnectionString;
@@ -222,6 +274,49 @@ static async Task EnsureMusicBrainzSchemaAsync(WebApplication app)
     await EnsureColumnAsync(db, "songs", "musicbrainz_recording_id", "ALTER TABLE `songs` ADD COLUMN `musicbrainz_recording_id` VARCHAR(36) NULL AFTER `title`;");
 }
 
+static async Task EnsureLiveSessionsSchemaAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<RitualDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SchemaStartup");
+
+    // Add started_by_user_id column
+    await EnsureColumnAsync(db, "live_sessions", "started_by_user_id",
+        "ALTER TABLE `live_sessions` ADD COLUMN `started_by_user_id` CHAR(36) CHARACTER SET ascii COLLATE ascii_general_ci NULL AFTER `setlist_id`;");
+
+    // Add FK constraint if missing
+    if (!await ConstraintExistsAsync(db, "live_sessions", "fk_live_sessions_started_by_user"))
+    {
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE `live_sessions` ADD CONSTRAINT `fk_live_sessions_started_by_user` FOREIGN KEY (`started_by_user_id`) REFERENCES `users`(`user_id`) ON DELETE SET NULL;");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Could not add FK fk_live_sessions_started_by_user: {Msg}", ex.Message);
+        }
+    }
+
+    // Add composite index if missing
+    if (!await IndexExistsAsync(db, "live_sessions", "idx_live_sessions_band_status"))
+    {
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "CREATE INDEX `idx_live_sessions_band_status` ON `live_sessions`(`band_id`, `status`);");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Could not create idx_live_sessions_band_status: {Msg}", ex.Message);
+        }
+    }
+
+    // Migrate legacy 'Admin' role to 'RitualLeader'
+    await db.Database.ExecuteSqlRawAsync(
+        "UPDATE `band_members` SET `role` = 'RitualLeader' WHERE `role` = 'Admin';");
+}
+
 static async Task EnsureColumnAsync(RitualDbContext db, string tableName, string columnName, string alterSql)
 {
     if (await ColumnExistsAsync(db, tableName, columnName))
@@ -271,4 +366,40 @@ WHERE TABLE_SCHEMA = DATABASE()
             await connection.CloseAsync();
         }
     }
+}
+
+static async Task<bool> ConstraintExistsAsync(RitualDbContext db, string tableName, string constraintName)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != System.Data.ConnectionState.Open;
+    if (shouldClose) await connection.OpenAsync();
+    try
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = @t AND CONSTRAINT_NAME = @c";
+        var p1 = command.CreateParameter(); p1.ParameterName = "@t"; p1.Value = tableName; command.Parameters.Add(p1);
+        var p2 = command.CreateParameter(); p2.ParameterName = "@c"; p2.Value = constraintName; command.Parameters.Add(p2);
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(result) > 0;
+    }
+    finally { if (shouldClose) await connection.CloseAsync(); }
+}
+
+static async Task<bool> IndexExistsAsync(RitualDbContext db, string tableName, string indexName)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != System.Data.ConnectionState.Open;
+    if (shouldClose) await connection.OpenAsync();
+    try
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT COUNT(*) FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = @t AND INDEX_NAME = @i";
+        var p1 = command.CreateParameter(); p1.ParameterName = "@t"; p1.Value = tableName; command.Parameters.Add(p1);
+        var p2 = command.CreateParameter(); p2.ParameterName = "@i"; p2.Value = indexName; command.Parameters.Add(p2);
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(result) > 0;
+    }
+    finally { if (shouldClose) await connection.CloseAsync(); }
 }

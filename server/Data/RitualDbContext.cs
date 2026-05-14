@@ -127,6 +127,7 @@ public class RitualDbContext : DbContext
             entity.Property(e => e.LiveSessionId).HasColumnName("live_session_id");
             entity.Property(e => e.BandId).HasColumnName("band_id");
             entity.Property(e => e.SetlistId).HasColumnName("setlist_id");
+            entity.Property(e => e.StartedByUserId).HasColumnName("started_by_user_id");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.CurrentPositionIndex).HasColumnName("current_position_index");
             entity.Property(e => e.StartedAt).HasColumnName("started_at");

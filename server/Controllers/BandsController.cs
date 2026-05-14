@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using server.Logic.Exceptions;
 using server.Logic.Interfaces;
@@ -17,11 +19,17 @@ public class BandsController : ControllerBase
         _bandsLogic = bandsLogic;
     }
 
+    private string? OptionalUserId => User.Identity?.IsAuthenticated == true
+        ? User.FindFirstValue(ClaimTypes.NameIdentifier)
+        : null;
+
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyCollection<BandResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<BandResponse>>> GetBands([FromQuery] string? userId = null)
     {
-        return Ok(await _bandsLogic.GetBandsAsync(userId));
+        // Prefer JWT identity; fall back to legacy query-param for backwards compatibility.
+        var effectiveUserId = OptionalUserId ?? userId;
+        return Ok(await _bandsLogic.GetBandsAsync(effectiveUserId));
     }
 
     [HttpGet("{bandId}")]
@@ -72,6 +80,61 @@ public class BandsController : ControllerBase
         catch (NotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("{bandId}/members")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<BandMemberResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<BandMemberResponse>>> GetMembers(string bandId)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            return Ok(await _bandsLogic.GetMembersAsync(userId, bandId));
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [Authorize]
+    [HttpPost("{bandId}/members")]
+    [ProducesResponseType(typeof(BandMemberResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BandMemberResponse>> AddMember(string bandId, [FromBody] AddBandMemberRequest request)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var added = await _bandsLogic.AddMemberAsync(userId, bandId, request);
+            return Created(string.Empty, added);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ConflictException ex)
+        {
+            return Conflict(new { error = ex.Message });
         }
     }
 }

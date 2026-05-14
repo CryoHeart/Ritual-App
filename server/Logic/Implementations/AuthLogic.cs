@@ -4,6 +4,7 @@ using server.Logic.Exceptions;
 using server.Logic.Interfaces;
 using server.Models.Requests;
 using server.Models.Responses;
+using server.Services;
 
 namespace server.Logic.Implementations;
 
@@ -11,11 +12,13 @@ public class AuthLogic : IAuthLogic
 {
     private readonly IUsersDao _usersDao;
     private readonly IBandsDao _bandsDao;
+    private readonly IJwtTokenService _jwtTokenService;
 
-    public AuthLogic(IUsersDao usersDao, IBandsDao bandsDao)
+    public AuthLogic(IUsersDao usersDao, IBandsDao bandsDao, IJwtTokenService jwtTokenService)
     {
         _usersDao = usersDao;
         _bandsDao = bandsDao;
+        _jwtTokenService = jwtTokenService;
     }
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -35,6 +38,7 @@ public class AuthLogic : IAuthLogic
             UserId = user.UserId,
             DisplayName = user.DisplayName,
             Email = user.Email,
+            Token = _jwtTokenService.GenerateToken(user.UserId, user.DisplayName, user.Email),
         };
     }
 
@@ -80,6 +84,7 @@ public class AuthLogic : IAuthLogic
             UserId = createdUser.UserId,
             DisplayName = createdUser.DisplayName,
             Email = createdUser.Email,
+            Token = _jwtTokenService.GenerateToken(createdUser.UserId, createdUser.DisplayName, createdUser.Email),
         };
     }
 
@@ -118,6 +123,7 @@ public class AuthLogic : IAuthLogic
             UserId = user.UserId,
             DisplayName = user.DisplayName,
             Email = user.Email,
+            Token = _jwtTokenService.GenerateToken(user.UserId, user.DisplayName, user.Email),
         };
     }
 

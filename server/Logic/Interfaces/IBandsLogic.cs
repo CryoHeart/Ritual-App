@@ -12,4 +12,8 @@ public interface IBandsLogic
     Task<BandResponse> CreateBandAsync(CreateBandRequest request);
 
     Task<BandResponse> UpdateBandNameAsync(string bandId, UpdateBandNameRequest request);
+
+    Task<IReadOnlyCollection<BandMemberResponse>> GetMembersAsync(string requestingUserId, string bandId);
+
+    Task<BandMemberResponse> AddMemberAsync(string requestingUserId, string bandId, AddBandMemberRequest request);
 }
